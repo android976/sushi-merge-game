@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sushi Merge: Realistic Colors</title>
+    <title>Sushi Merge: Final Version</title>
     <style>
         /* --- СБРОС И БАЗА --- */
         * { box-sizing: border-box; }
@@ -180,9 +180,10 @@
             <div id="result-text">Текст результата</div>
             <div id="promo-container" style="display:none;">
                 <div class="promo-box" id="promo-code">CODE</div>
-                <div style="font-size: 10px; color: #888;">Покажите промокод официанту</div>
+                <!-- ОБНОВЛЕННЫЙ ТЕКСТ ЗДЕСЬ -->
+                <div style="font-size: 12px; color: #888; margin-bottom: 10px;">Введите этот промокод при заказе</div>
             </div>
-            <button class="btn" style="margin-top:15px; background-color: #2e86de; box-shadow: 0 4px 0 #1e6cb3;" onclick="restartGame()">ИГРАТЬ ЕЩЕ</button>
+            <button class="btn" style="margin-top:5px; background-color: #2e86de; box-shadow: 0 4px 0 #1e6cb3;" onclick="restartGame()">ИГРАТЬ ЕЩЕ</button>
         </div>
     </div>
 
@@ -276,18 +277,16 @@
         }
     }
 
-    // --- НОВЫЕ ТИПЫ РОЛЛОВ И ЦВЕТА ---
-    // radius: Размер
-    // color: Цвет начинки
+    // --- ТИПЫ РОЛЛОВ ---
     const SUSHI_TYPES = [
-        { radius: 23, color: '#4cd137', name: 'Огурец' },    // 0 - Зеленый
-        { radius: 32, color: '#e84118', name: 'Тунец' },     // 1 - Красный
-        { radius: 45, color: '#f39c12', name: 'Лосось' },    // 2 - Оранжевый
-        { radius: 58, color: '#f1c40f', name: 'Тамаго' },    // 3 - Желтый
-        { radius: 72, color: '#ff7979', name: 'Креветка' },  // 4 - Розовый
-        { radius: 86, color: '#cddc39', name: 'Авокадо' },   // 5 - Салатовый
-        { radius: 98, color: '#795548', name: 'Угорь' },     // 6 - Коричневый
-        { radius: 115, color: '#c0392b', name: 'Икра' }      // 7 - Темно-красный
+        { radius: 23, color: '#4cd137', name: 'Огурец' },    // 0
+        { radius: 32, color: '#e84118', name: 'Тунец' },     // 1
+        { radius: 45, color: '#f39c12', name: 'Лосось' },    // 2
+        { radius: 58, color: '#f1c40f', name: 'Тамаго' },    // 3
+        { radius: 72, color: '#ff7979', name: 'Креветка' },  // 4
+        { radius: 86, color: '#cddc39', name: 'Авокадо' },   // 5
+        { radius: 98, color: '#795548', name: 'Угорь' },     // 6
+        { radius: 115, color: '#c0392b', name: 'Икра' }      // 7
     ];
 
     const Engine = Matter.Engine,
@@ -421,27 +420,24 @@
         }
     });
 
-    // --- ОБНОВЛЕННАЯ ОТРИСОВКА (ТОЛЬКО МАКИ СТАЙЛ) ---
+    // --- ОТРИСОВКА ---
     function drawSushiArt(ctx, x, y, radius, typeData) {
-        // 1. Окантовка (Нори) - Черная
+        // Окантовка
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fillStyle = '#1a1a1a'; 
         ctx.fill();
-
-        // 2. Рис - Белый круг
+        // Рис
         ctx.beginPath();
         ctx.arc(x, y, radius * 0.85, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff'; 
         ctx.fill();
-
-        // 3. Начинка - Цветной круг
+        // Начинка
         ctx.beginPath();
         ctx.arc(x, y, radius * 0.5, 0, Math.PI * 2);
         ctx.fillStyle = typeData.color; 
         ctx.fill();
-
-        // 4. Блик (для объема)
+        // Блик
         ctx.beginPath();
         ctx.arc(x - radius*0.3, y - radius*0.3, radius*0.2, 0, Math.PI*2);
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
