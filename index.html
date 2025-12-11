@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sushi Merge: Centered UI</title>
+    <title>Sushi Merge: Strict Pairs</title>
     <style>
         /* --- СБРОС И БАЗА --- */
         * { box-sizing: border-box; }
@@ -129,9 +129,8 @@
         .menu-title { font-size: 24px; color: #5d4037; margin-bottom: 5px; font-weight: 900; text-transform: uppercase; }
         .menu-subtitle { font-size: 16px; color: #ee5253; margin-bottom: 15px; font-weight: 700; }
         
-        /* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ СПИСКА */
         .rewards-list {
-            text-align: center; /* Центрируем текст внутри блока */
+            text-align: center; 
             background: #fff5e6; 
             padding: 10px; 
             border-radius: 10px; 
@@ -146,7 +145,7 @@
             color: #5d4037; 
             display: flex; 
             align-items: center;
-            justify-content: center; /* Центрируем элементы (плашка + текст) в строке */
+            justify-content: center; 
         }
         
         .rewards-list li:last-child { margin-bottom: 0; }
@@ -383,6 +382,7 @@
         canDrop = true;
     }
 
+    // --- ПРОВЕРКА ПРОИГРЫША ---
     Events.on(engine, 'beforeUpdate', function() {
         if (!gameActive || gameOver) return;
         const bodies = Composite.allBodies(world);
@@ -404,12 +404,19 @@
         }
     });
 
+    // --- ОБРАБОТКА СТОЛКНОВЕНИЙ ---
     Events.on(engine, 'collisionStart', (event) => {
         const pairs = event.pairs;
+        
+        // Сет для хранения ID тел, которые уже были обработаны (слиты) в этом шаге
+        // Это предотвращает слияние 3-х шариков одновременно
+        const processedIds = new Set();
+
         for (let i = 0; i < pairs.length; i++) {
             const bodyA = pairs[i].bodyA;
             const bodyB = pairs[i].bodyB;
 
+            // Логика "приземления"
             const checkLanding = (body, other) => {
                 if (!body.isStatic && (other.label === 'ground' || other.sushiType)) {
                     body.hasCollided = true;
@@ -419,9 +426,20 @@
             if (bodyA.sushiType) checkLanding(bodyA, bodyB);
             if (bodyB.sushiType) checkLanding(bodyB, bodyA);
 
+            // Если один из шариков уже был слит в этом кадре, пропускаем
+            if (processedIds.has(bodyA.id) || processedIds.has(bodyB.id)) {
+                continue;
+            }
+
+            // Логика слияния
             if (bodyA.label === bodyB.label && bodyA.sushiType && bodyB.sushiType) {
                 const index = parseInt(bodyA.label);
                 if (index < SUSHI_TYPES.length - 1) {
+                    
+                    // Помечаем шарики как обработанные
+                    processedIds.add(bodyA.id);
+                    processedIds.add(bodyB.id);
+
                     World.remove(world, [bodyA, bodyB]);
                     const midX = (bodyA.position.x + bodyB.position.x) / 2;
                     const midY = (bodyA.position.y + bodyB.position.y) / 2;
