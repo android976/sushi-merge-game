@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sushi Merge: Promo Game</title>
+    <title>Sushi Merge: Promo Rewards</title>
     <style>
         body {
             margin: 0;
@@ -19,18 +19,15 @@
             touch-action: none;
         }
 
-        /* --- СТАРТОВОЕ МЕНЮ --- */
-        #menu-overlay {
+        /* --- ОБЩИЕ СТИЛИ МЕНЮ --- */
+        .overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #fce8cc;
-            background-image: radial-gradient(#fff5e6 20%, transparent 20%), radial-gradient(#fff5e6 20%, transparent 20%);
-            background-position: 0 0, 50px 50px;
-            background-size: 100px 100px;
-            z-index: 2000; /* Поверх всего */
+            background-color: rgba(252, 232, 204, 0.95);
+            z-index: 2000;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -41,46 +38,102 @@
 
         .menu-content {
             background: white;
-            padding: 40px 20px;
+            padding: 30px 20px;
             border-radius: 25px;
             box-shadow: 0 10px 30px rgba(93, 64, 55, 0.2);
-            width: 80%;
-            max-width: 350px;
+            width: 85%;
+            max-width: 360px;
             border: 4px solid #5d4037;
+            box-sizing: border-box;
         }
 
         .menu-title {
-            font-size: 28px;
+            font-size: 26px;
             color: #5d4037;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             font-weight: 900;
             text-transform: uppercase;
         }
 
         .menu-subtitle {
-            font-size: 18px;
+            font-size: 16px;
             color: #ee5253;
-            margin-bottom: 30px;
-            line-height: 1.4;
-            font-weight: 600;
+            margin-bottom: 20px;
+            font-weight: 700;
         }
 
-        .start-btn {
+        /* Список наград */
+        .rewards-list {
+            text-align: left;
+            background: #fff5e6;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            list-style: none;
+            border: 2px dashed #ffb8b8;
+        }
+
+        .rewards-list li {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #5d4037;
+            display: flex;
+            align-items: center;
+        }
+
+        .rewards-list li:last-child { margin-bottom: 0; }
+        
+        .badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        /* Кнопки */
+        .btn {
             background-color: #ff6b6b;
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 24px;
+            padding: 12px 30px;
+            font-size: 20px;
             border-radius: 50px;
             cursor: pointer;
             font-weight: bold;
             box-shadow: 0 5px 0 #c0392b;
             transition: transform 0.1s;
+            text-transform: uppercase;
         }
 
-        .start-btn:active {
+        .btn:active {
             transform: translateY(5px);
             box-shadow: none;
+        }
+
+        /* Окно результатов */
+        #result-text {
+            font-size: 15px;
+            color: #5d4037;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .promo-box {
+            background: #2d3436;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 24px;
+            margin: 10px 0 20px 0;
+            letter-spacing: 2px;
+            border: 2px solid #fab1a0;
         }
 
         /* --- ИГРОВОЙ ИНТЕРФЕЙС --- */
@@ -137,7 +190,7 @@
 
         #danger-line {
             position: absolute;
-            top: 120px;
+            top: 130px; /* Линия проигрыша */
             left: 0;
             width: 100%;
             height: 2px;
@@ -148,11 +201,21 @@
         
         #danger-text {
             position: absolute;
-            top: 100px;
+            top: 110px;
             right: 5px;
             font-size: 10px;
             color: rgba(231, 76, 60, 0.8);
             pointer-events: none;
+        }
+
+        /* Анимация мигания при опасности */
+        .danger-active {
+            animation: flashRed 0.5s infinite;
+        }
+        @keyframes flashRed {
+            0% { background-color: rgba(255, 0, 0, 0); }
+            50% { background-color: rgba(255, 0, 0, 0.2); }
+            100% { background-color: rgba(255, 0, 0, 0); }
         }
 
     </style>
@@ -161,11 +224,34 @@
 <body>
 
     <!-- СТАРТОВОЕ МЕНЮ -->
-    <div id="menu-overlay">
+    <div id="start-menu" class="overlay">
         <div class="menu-content">
             <div class="menu-title">Sushi Merge</div>
             <div class="menu-subtitle">Играй и получай<br>бесплатные роллы!</div>
-            <button class="start-btn" onclick="startGame()">НАЧАТЬ</button>
+            
+            <ul class="rewards-list">
+                <li><span class="badge">1000</span> Маки с лососем</li>
+                <li><span class="badge">2000</span> Темпура с крабом</li>
+                <li><span class="badge">3000</span> Филадельфия лайт</li>
+            </ul>
+
+            <button class="btn" onclick="startGame()">НАЧАТЬ</button>
+        </div>
+    </div>
+
+    <!-- МЕНЮ GAME OVER -->
+    <div id="game-over-menu" class="overlay" style="display: none;">
+        <div class="menu-content">
+            <div class="menu-title">Игра окончена!</div>
+            <div class="menu-subtitle">Ваш счет: <span id="final-score">0</span></div>
+            
+            <div id="result-text">Текст результата</div>
+            <div id="promo-container" style="display:none;">
+                <div class="promo-box" id="promo-code">CODE</div>
+                <div style="font-size: 10px; color: #888;">Покажите промокод официанту или введите на сайте</div>
+            </div>
+
+            <button class="btn" style="margin-top:20px; background-color: #2e86de; box-shadow: 0 5px 0 #1e6cb3;" onclick="restartGame()">ИГРАТЬ ЕЩЕ</button>
         </div>
     </div>
 
@@ -186,24 +272,90 @@
     </div>
 
 <script>
-    // --- УПРАВЛЕНИЕ МЕНЮ ---
-    let gameActive = false; // Флаг, началась ли игра
-
-    function startGame() {
-        const menu = document.getElementById('menu-overlay');
-        menu.style.opacity = '0'; // Плавное исчезновение
-        setTimeout(() => {
-            menu.style.display = 'none';
-            gameActive = true; // Разрешаем играть
-            resizeGame(); // Обновляем размеры на всякий случай
-        }, 500);
-    }
-
-    // --- КОНФИГУРАЦИЯ ИГРЫ ---
+    // --- ПЕРЕМЕННЫЕ СОСТОЯНИЯ ---
+    let gameActive = false;
+    let gameOver = false;
+    let score = 0;
+    
+    // --- НАСТРОЙКИ ИГРЫ ---
     const LOGICAL_WIDTH = 380; 
     const LOGICAL_HEIGHT = 650;
     const WALL_THICKNESS = 60;
+    const DANGER_Y = 130; // Высота линии проигрыша
+    const GAME_OVER_FRAMES = 120; // Около 2 секунд нахождения выше линии
 
+    // --- ФУНКЦИИ ИНТЕРФЕЙСА ---
+
+    function startGame() {
+        const menu = document.getElementById('start-menu');
+        menu.style.opacity = '0';
+        setTimeout(() => {
+            menu.style.display = 'none';
+            gameActive = true;
+            gameOver = false;
+            resizeGame();
+            spawnCurrent();
+        }, 500);
+    }
+
+    function restartGame() {
+        // Очищаем мир
+        Composite.clear(world, false, true); 
+        // Важно: стены тоже удаляются clear(..., true), поэтому восстанавливаем стены
+        createWalls();
+
+        // Сброс переменных
+        score = 0;
+        document.getElementById('score').innerText = '0';
+        gameActive = true;
+        gameOver = false;
+        gameOverTimer = 0;
+        currentBody = null;
+        canDrop = true;
+        
+        // Скрываем меню
+        document.getElementById('game-over-menu').style.display = 'none';
+        
+        // Запуск
+        nextSushiIndex = getRandomSushiIndex();
+        updateNextPreview();
+        spawnCurrent();
+    }
+
+    function showGameOver() {
+        gameActive = false;
+        gameOver = true;
+        
+        const menu = document.getElementById('game-over-menu');
+        const finalText = document.getElementById('result-text');
+        const promoContainer = document.getElementById('promo-container');
+        const promoCode = document.getElementById('promo-code');
+        const finalScoreEl = document.getElementById('final-score');
+
+        finalScoreEl.innerText = score;
+        menu.style.display = 'flex';
+        menu.style.opacity = '1';
+
+        // Логика наград
+        if (score >= 3000) {
+            finalText.innerText = "Поздравляю с победой! Твой промокод на ролл Филадельфия лайт к заказу от 1000₽:";
+            promoCode.innerText = "ФИЛА";
+            promoContainer.style.display = 'block';
+        } else if (score >= 2000) {
+            finalText.innerText = "Поздравляю с победой! Твой промокод на ролл Темпура с крабом к заказу от 1300₽:";
+            promoCode.innerText = "КРАБ";
+            promoContainer.style.display = 'block';
+        } else if (score >= 1000) {
+            finalText.innerText = "Поздравляю с победой! Твой промокод на ролл Маки с лососем к заказу от 1500₽:";
+            promoCode.innerText = "МАКИ";
+            promoContainer.style.display = 'block';
+        } else {
+            finalText.innerText = "Немного не хватило до приза! Набери 1000 очков, чтобы получить бесплатный ролл.";
+            promoContainer.style.display = 'none';
+        }
+    }
+
+    // --- MATTER.JS SETUP ---
     const SUSHI_TYPES = [
         { radius: 22, type: 'maki', color: '#ff6b6b' },        
         { radius: 30, type: 'maki', color: '#9aca3c' },        
@@ -239,21 +391,101 @@
         }
     });
 
-    const ground = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + WALL_THICKNESS/2, LOGICAL_WIDTH + 200, WALL_THICKNESS, { isStatic: true, render: { visible: false } });
-    const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, { isStatic: true, render: { visible: false } });
-    const rightWall = Bodies.rectangle(LOGICAL_WIDTH + WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, { isStatic: true, render: { visible: false } });
+    function createWalls() {
+        const wallOptions = { 
+            isStatic: true, 
+            render: { visible: false },
+            restitution: 0.5,
+            friction: 0
+        };
+        const ground = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + WALL_THICKNESS/2, LOGICAL_WIDTH + 200, WALL_THICKNESS, wallOptions);
+        const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOptions);
+        const rightWall = Bodies.rectangle(LOGICAL_WIDTH + WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOptions);
+        World.add(world, [ground, leftWall, rightWall]);
+    }
+    createWalls();
 
-    World.add(world, [ground, leftWall, rightWall]);
-
+    // --- ИГРОВАЯ ЛОГИКА ---
     let currentBody = null;
     let nextSushiIndex = 0;
     let canDrop = true;
-    let score = 0;
+    let gameOverTimer = 0;
     const spawnY = 60; 
 
+    function createSushiBody(x, y, index, isStatic = false) {
+        const type = SUSHI_TYPES[index];
+        const body = Bodies.circle(x, y, type.radius, {
+            label: index.toString(),
+            isStatic: isStatic,
+            restitution: 0.5,    
+            friction: 0.02,      
+            frictionAir: 0.001,  
+            frictionStatic: 0.1, 
+            density: 0.002,
+            render: { fillStyle: 'transparent' }
+        });
+        body.sushiType = type; 
+        return body;
+    }
+
+    function getRandomSushiIndex() { return Math.floor(Math.random() * 3); }
+
+    function updateNextPreview() {
+        const canvas = document.getElementById('next-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const type = SUSHI_TYPES[nextSushiIndex];
+        drawSushiArt(ctx, 25, 25, 20, type);
+    }
+
+    function spawnCurrent() {
+        if(gameOver) return;
+        
+        const typeIdx = nextSushiIndex;
+        nextSushiIndex = getRandomSushiIndex();
+        updateNextPreview();
+        
+        currentBody = createSushiBody(LOGICAL_WIDTH / 2, spawnY, typeIdx, true);
+        currentBody.collisionFilter.group = -1; 
+        World.add(world, currentBody);
+        canDrop = true;
+    }
+
+    // --- ПРОВЕРКА ПРОИГРЫША ---
+    Events.on(engine, 'beforeUpdate', function() {
+        if (!gameActive || gameOver) return;
+
+        const bodies = Composite.allBodies(world);
+        let dangerDetected = false;
+
+        for (let i = 0; i < bodies.length; i++) {
+            const body = bodies[i];
+            // Игнорируем стены и шарик, который сейчас в руке
+            if (body.isStatic || body === currentBody) continue;
+
+            // Если шарик выше линии (y меньше, т.к. 0 сверху)
+            if (body.position.y < DANGER_Y) {
+                dangerDetected = true;
+                break;
+            }
+        }
+
+        if (dangerDetected) {
+            gameOverTimer++;
+            containerElement.classList.add('danger-active');
+            if (gameOverTimer > GAME_OVER_FRAMES) {
+                showGameOver();
+            }
+        } else {
+            gameOverTimer = 0;
+            containerElement.classList.remove('danger-active');
+        }
+    });
+
+    // --- ОТРИСОВКА ---
     function drawSushiArt(ctx, x, y, radius, typeData) {
-        ctx.beginPath();
         if (typeData.type === 'maki') {
+            ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = '#2d3436'; 
             ctx.fill();
@@ -266,6 +498,7 @@
             ctx.fillStyle = typeData.color; 
             ctx.fill();
         } else {
+            ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = '#fdfdfd'; 
             ctx.fill();
@@ -302,42 +535,8 @@
         });
     });
 
-    function createSushiBody(x, y, index, isStatic = false) {
-        const type = SUSHI_TYPES[index];
-        const body = Bodies.circle(x, y, type.radius, {
-            label: index.toString(),
-            restitution: 0.2,
-            friction: 0.1,
-            isStatic: isStatic,
-            render: { fillStyle: 'transparent' }
-        });
-        body.sushiType = type; 
-        return body;
-    }
-
-    function getRandomSushiIndex() { return Math.floor(Math.random() * 3); }
-
-    function updateNextPreview() {
-        const canvas = document.getElementById('next-canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const type = SUSHI_TYPES[nextSushiIndex];
-        drawSushiArt(ctx, 25, 25, 20, type);
-    }
-
-    function spawnCurrent() {
-        const typeIdx = nextSushiIndex;
-        nextSushiIndex = getRandomSushiIndex();
-        updateNextPreview();
-        
-        currentBody = createSushiBody(LOGICAL_WIDTH / 2, spawnY, typeIdx, true);
-        currentBody.collisionFilter.group = -1; 
-        World.add(world, currentBody);
-        canDrop = true;
-    }
-
+    // --- УПРАВЛЕНИЕ ---
     let scaleFactor = 1;
-
     function resizeGame() {
         const wrapper = document.getElementById('game-wrapper');
         const availableWidth = wrapper.clientWidth;
@@ -348,12 +547,11 @@
         if (scaleFactor > 1.2) scaleFactor = 1.2;
         containerElement.style.transform = `scale(${scaleFactor})`;
     }
-
     window.addEventListener('resize', resizeGame);
     resizeGame();
 
     function handleInputMove(clientX) {
-        if (!gameActive || !canDrop || !currentBody) return; // Проверка gameActive
+        if (!gameActive || !canDrop || !currentBody) return;
         const rect = containerElement.getBoundingClientRect();
         let x = (clientX - rect.left) / scaleFactor;
         const r = currentBody.circleRadius;
@@ -363,7 +561,7 @@
     }
 
     function handleInputEnd() {
-        if (!gameActive || !canDrop || !currentBody) return; // Проверка gameActive
+        if (!gameActive || !canDrop || !currentBody) return;
         canDrop = false;
         Body.setStatic(currentBody, false);
         currentBody.collisionFilter.group = 0; 
@@ -373,18 +571,16 @@
 
     document.addEventListener('mousemove', (e) => handleInputMove(e.clientX));
     document.addEventListener('mouseup', handleInputEnd);
-
     containerElement.addEventListener('touchstart', (e) => {
         if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
     }, {passive: false});
-
     containerElement.addEventListener('touchmove', (e) => {
         e.preventDefault();
         if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
     }, {passive: false});
-
     containerElement.addEventListener('touchend', handleInputEnd);
 
+    // --- СЛИЯНИЕ ---
     Events.on(engine, 'collisionStart', (event) => {
         const pairs = event.pairs;
         for (let i = 0; i < pairs.length; i++) {
@@ -407,7 +603,6 @@
 
     nextSushiIndex = getRandomSushiIndex();
     updateNextPreview();
-    spawnCurrent();
     
     Render.run(render);
     const runner = Runner.create();
