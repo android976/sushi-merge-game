@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sushi Merge: Final Version</title>
+    <title>Sushi Merge: Russian UI</title>
     <style>
         /* --- СБРОС И БАЗА --- */
         * { box-sizing: border-box; }
@@ -53,7 +53,7 @@
             flex-direction: column;
             align-items: center;
             color: #5d4037;
-            font-size: 12px;
+            font-size: 12px; /* Размер шрифта для слова "Следующий" */
             font-weight: bold;
         }
 
@@ -180,7 +180,6 @@
             <div id="result-text">Текст результата</div>
             <div id="promo-container" style="display:none;">
                 <div class="promo-box" id="promo-code">CODE</div>
-                <!-- ОБНОВЛЕННЫЙ ТЕКСТ ЗДЕСЬ -->
                 <div style="font-size: 12px; color: #888; margin-bottom: 10px;">Введите этот промокод при заказе</div>
             </div>
             <button class="btn" style="margin-top:5px; background-color: #2e86de; box-shadow: 0 4px 0 #1e6cb3;" onclick="restartGame()">ИГРАТЬ ЕЩЕ</button>
@@ -191,7 +190,8 @@
     <div id="ui-header">
         <div class="score-box">Очки: <span id="score">0</span></div>
         <div class="next-box">
-            <span>Next</span>
+            <!-- ПЕРЕВЕДЕНО НА РУССКИЙ -->
+            <span>Следующий</span>
             <canvas id="next-canvas" width="50" height="50"></canvas>
         </div>
     </div>
