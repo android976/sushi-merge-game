@@ -2,96 +2,219 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sushi Merge Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sushi Merge: Promo Game</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #fce8cc; /* Цвет фона как на скрине */
+            background-color: #fce8cc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            touch-action: none;
         }
 
-        #ui-container {
-            margin-top: 20px;
+        /* --- СТАРТОВОЕ МЕНЮ --- */
+        #menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fce8cc;
+            background-image: radial-gradient(#fff5e6 20%, transparent 20%), radial-gradient(#fff5e6 20%, transparent 20%);
+            background-position: 0 0, 50px 50px;
+            background-size: 100px 100px;
+            z-index: 2000; /* Поверх всего */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: opacity 0.5s;
+        }
+
+        .menu-content {
+            background: white;
+            padding: 40px 20px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(93, 64, 55, 0.2);
+            width: 80%;
+            max-width: 350px;
+            border: 4px solid #5d4037;
+        }
+
+        .menu-title {
+            font-size: 28px;
+            color: #5d4037;
+            margin-bottom: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .menu-subtitle {
+            font-size: 18px;
+            color: #ee5253;
+            margin-bottom: 30px;
+            line-height: 1.4;
+            font-weight: 600;
+        }
+
+        .start-btn {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 0 #c0392b;
+            transition: transform 0.1s;
+        }
+
+        .start-btn:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        /* --- ИГРОВОЙ ИНТЕРФЕЙС --- */
+        #ui-header {
             display: flex;
             justify-content: space-between;
-            width: 400px;
-            color: #5d4037;
+            align-items: center;
+            width: 90%;
+            max-width: 400px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            z-index: 100;
         }
 
         .score-box {
             background: #fff;
-            padding: 10px 20px;
-            border-radius: 15px;
+            padding: 8px 15px;
+            border-radius: 12px;
             border: 2px solid #5d4037;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 18px;
+            color: #5d4037;
+            min-width: 100px;
+        }
+
+        .next-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #5d4037;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        #game-wrapper {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            overflow: hidden;
         }
 
         #game-container {
             position: relative;
-            margin-top: 10px;
+            background: #ebd5b3;
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-left: 5px solid #bcaaa4;
+            border-right: 5px solid #bcaaa4;
+            border-bottom: 5px solid #bcaaa4;
+            transform-origin: top center; 
         }
 
-        /* Линия проигрыша */
         #danger-line {
             position: absolute;
-            top: 100px;
+            top: 120px;
             left: 0;
             width: 100%;
             height: 2px;
-            background-color: transparent;
-            border-top: 2px dashed rgba(255, 0, 0, 0.5);
+            border-top: 2px dashed rgba(231, 76, 60, 0.6);
             pointer-events: none;
             z-index: 10;
         }
         
-        #next-item-label {
-            text-align: center;
-            font-size: 14px;
-            margin-bottom: 5px;
+        #danger-text {
+            position: absolute;
+            top: 100px;
+            right: 5px;
+            font-size: 10px;
+            color: rgba(231, 76, 60, 0.8);
+            pointer-events: none;
         }
+
     </style>
-    <!-- Подключаем физический движок Matter.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
 <body>
 
-    <div id="ui-container">
-        <div class="score-box">Очки: <span id="score">0</span></div>
-        <div>
-            <div id="next-item-label">Следующий:</div>
-            <!-- Сюда будем рисовать следующий ролл -->
-            <canvas id="next-canvas" width="60" height="60" style="background:none;"></canvas>
+    <!-- СТАРТОВОЕ МЕНЮ -->
+    <div id="menu-overlay">
+        <div class="menu-content">
+            <div class="menu-title">Sushi Merge</div>
+            <div class="menu-subtitle">Играй и получай<br>бесплатные роллы!</div>
+            <button class="start-btn" onclick="startGame()">НАЧАТЬ</button>
         </div>
     </div>
 
-    <div id="game-container">
-        <div id="danger-line"></div>
-        <!-- Здесь будет канвас игры -->
+    <!-- ИГРА -->
+    <div id="ui-header">
+        <div class="score-box">Очки: <span id="score">0</span></div>
+        <div class="next-box">
+            <span>Next</span>
+            <canvas id="next-canvas" width="50" height="50"></canvas>
+        </div>
+    </div>
+
+    <div id="game-wrapper">
+        <div id="game-container">
+            <div id="danger-line"></div>
+            <span id="danger-text">Линия переполнения</span>
+        </div>
     </div>
 
 <script>
-    // --- НАСТРОЙКИ РОЛЛОВ ---
-    // Здесь определяем иерархию: от маленьких маки до больших сетов
+    // --- УПРАВЛЕНИЕ МЕНЮ ---
+    let gameActive = false; // Флаг, началась ли игра
+
+    function startGame() {
+        const menu = document.getElementById('menu-overlay');
+        menu.style.opacity = '0'; // Плавное исчезновение
+        setTimeout(() => {
+            menu.style.display = 'none';
+            gameActive = true; // Разрешаем играть
+            resizeGame(); // Обновляем размеры на всякий случай
+        }, 500);
+    }
+
+    // --- КОНФИГУРАЦИЯ ИГРЫ ---
+    const LOGICAL_WIDTH = 380; 
+    const LOGICAL_HEIGHT = 650;
+    const WALL_THICKNESS = 60;
+
     const SUSHI_TYPES = [
-        { radius: 25, type: 'maki', color: '#ff6b6b', name: 'Маки с тунцом' },        // 0
-        { radius: 35, type: 'maki', color: '#9aca3c', name: 'Маки с огурцом' },       // 1
-        { radius: 48, type: 'rice', color: '#ff9f43', name: 'Сяке Ролл' },            // 2
-        { radius: 60, type: 'rice', color: '#f368e0', name: 'Калифорния' },           // 3
-        { radius: 75, type: 'rice', color: '#ee5253', name: 'Филадельфия' },          // 4
-        { radius: 90, type: 'rice', color: '#2e86de', name: 'Унаги Ролл' },           // 5
-        { radius: 105, type: 'rice', color: '#10ac84', name: 'Дракон' },              // 6
-        { radius: 120, type: 'special', color: '#222f3e', name: 'Сумо Сет' }          // 7
+        { radius: 22, type: 'maki', color: '#ff6b6b' },        
+        { radius: 30, type: 'maki', color: '#9aca3c' },        
+        { radius: 42, type: 'rice', color: '#ff9f43' },        
+        { radius: 54, type: 'rice', color: '#f368e0' },        
+        { radius: 68, type: 'rice', color: '#ee5253' },        
+        { radius: 82, type: 'rice', color: '#2e86de' },        
+        { radius: 95, type: 'rice', color: '#10ac84' },        
+        { radius: 110, type: 'special', color: '#222f3e' }     
     ];
 
-    // --- ИНИЦИАЛИЗАЦИЯ MATTER.JS ---
     const Engine = Matter.Engine,
           Render = Matter.Render,
           Runner = Matter.Runner,
@@ -101,123 +224,77 @@
           World = Matter.World,
           Body = Matter.Body;
 
-    // Параметры игрового поля
-    const WIDTH = 450;
-    const HEIGHT = 700;
-    const WALL_THICKNESS = 40;
-
     const engine = Engine.create();
     const world = engine.world;
 
-    // Создаем рендерер
+    const containerElement = document.getElementById('game-container');
     const render = Render.create({
-        element: document.getElementById('game-container'),
+        element: containerElement,
         engine: engine,
         options: {
-            width: WIDTH,
-            height: HEIGHT,
-            wireframes: false, // Чтобы были цвета, а не каркас
-            background: '#ebd5b3' // Цвет "стакана" внутри
+            width: LOGICAL_WIDTH,
+            height: LOGICAL_HEIGHT,
+            wireframes: false,
+            background: 'transparent'
         }
     });
 
-    // --- СОЗДАНИЕ СТЕН ---
-    const ground = Bodies.rectangle(WIDTH/2, HEIGHT + WALL_THICKNESS/2 - 10, WIDTH, WALL_THICKNESS, { isStatic: true, render: { fillStyle: '#bcaaa4' } });
-    const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, HEIGHT/2, WALL_THICKNESS, HEIGHT, { isStatic: true, render: { fillStyle: '#bcaaa4' } });
-    const rightWall = Bodies.rectangle(WIDTH + WALL_THICKNESS/2, HEIGHT/2, WALL_THICKNESS, HEIGHT, { isStatic: true, render: { fillStyle: '#bcaaa4' } });
+    const ground = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + WALL_THICKNESS/2, LOGICAL_WIDTH + 200, WALL_THICKNESS, { isStatic: true, render: { visible: false } });
+    const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, { isStatic: true, render: { visible: false } });
+    const rightWall = Bodies.rectangle(LOGICAL_WIDTH + WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, { isStatic: true, render: { visible: false } });
 
     World.add(world, [ground, leftWall, rightWall]);
 
-    // --- ЛОГИКА ИГРЫ ---
     let currentBody = null;
     let nextSushiIndex = 0;
     let canDrop = true;
     let score = 0;
-    const spawnY = 50; // Высота, с которой падают роллы
+    const spawnY = 60; 
 
-    // Функция создания физического тела ролла
-    function createSushiBody(x, y, index, isStatic = false) {
-        const type = SUSHI_TYPES[index];
-        const body = Bodies.circle(x, y, type.radius, {
-            label: index.toString(), // Используем индекс как метку для слияния
-            restitution: 0.3, // Упругость
-            isStatic: isStatic,
-            render: {
-                fillStyle: type.type === 'maki' ? '#2d3436' : '#ffffff' // Нори или Рис (базовый цвет)
-            }
-        });
-        
-        // Добавляем свои свойства для отрисовки
-        body.sushiType = type; 
-        return body;
-    }
-
-    // Рандомайзер (выдает только первые 3 типа роллов для спавна)
-    function getRandomSushiIndex() {
-        return Math.floor(Math.random() * 3); 
-    }
-
-    // Обновление предпросмотра "Следующий"
-    function updateNextPreview() {
-        const canvas = document.getElementById('next-canvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const type = SUSHI_TYPES[nextSushiIndex];
-        // Рисуем миниатюру
-        drawSushiArt(ctx, 30, 30, 20, type); // Уменьшенный масштаб
-    }
-
-    // Функция отрисовки "арта" ролла (вызывается на каждом кадре)
     function drawSushiArt(ctx, x, y, radius, typeData) {
         ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        
         if (typeData.type === 'maki') {
-            // Маки: Черный контур (нори), белый рис внутри, цветная середина
-            ctx.fillStyle = '#2d3436'; // Нори
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#2d3436'; 
             ctx.fill();
-            
             ctx.beginPath();
-            ctx.arc(x, y, radius * 0.8, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff'; // Рис
+            ctx.arc(x, y, radius * 0.85, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff'; 
             ctx.fill();
-
             ctx.beginPath();
-            ctx.arc(x, y, radius * 0.4, 0, Math.PI * 2);
-            ctx.fillStyle = typeData.color; // Начинка
+            ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2);
+            ctx.fillStyle = typeData.color; 
             ctx.fill();
         } else {
-            // Обычный ролл: Белый рис снаружи, тонкий нори, начинка
-            ctx.fillStyle = '#ffffff'; // Рис
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fdfdfd'; 
             ctx.fill();
-            
-            // Текстура риса (точки)
             ctx.fillStyle = '#e0e0e0';
-            for(let i=0; i<3; i++) {
+            for(let i=0; i<4; i++) {
                 ctx.beginPath();
-                ctx.arc(x + (Math.random()-0.5)*radius, y + (Math.random()-0.5)*radius, 2, 0, Math.PI*2);
+                let ang = Math.random() * Math.PI * 2;
+                let dist = Math.random() * radius * 0.8;
+                ctx.arc(x + Math.cos(ang)*dist, y + Math.sin(ang)*dist, 2.5, 0, Math.PI*2);
                 ctx.fill();
             }
-
             ctx.beginPath();
-            ctx.arc(x, y, radius * 0.6, 0, Math.PI * 2);
-            ctx.fillStyle = '#2d3436'; // Нори внутри
+            ctx.arc(x, y, radius * 0.65, 0, Math.PI * 2);
+            ctx.fillStyle = '#2d3436'; 
             ctx.fill();
-
             ctx.beginPath();
-            ctx.arc(x, y, radius * 0.4, 0, Math.PI * 2);
-            ctx.fillStyle = typeData.color; // Начинка
+            ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2);
+            ctx.fillStyle = typeData.color; 
             ctx.fill();
         }
-        ctx.closePath();
+        ctx.beginPath();
+        ctx.arc(x - radius*0.3, y - radius*0.3, radius*0.15, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fill();
     }
 
-    // Подключаемся к рендеру Matter.js для отрисовки нашего "арта" поверх шариков
     Events.on(render, 'afterRender', function() {
         const ctx = render.context;
         const bodies = Composite.allBodies(world);
-
         bodies.forEach(body => {
             if (body.sushiType) {
                 drawSushiArt(ctx, body.position.x, body.position.y, body.circleRadius, body.sushiType);
@@ -225,79 +302,102 @@
         });
     });
 
-    // Создание текущего шарика в руке
+    function createSushiBody(x, y, index, isStatic = false) {
+        const type = SUSHI_TYPES[index];
+        const body = Bodies.circle(x, y, type.radius, {
+            label: index.toString(),
+            restitution: 0.2,
+            friction: 0.1,
+            isStatic: isStatic,
+            render: { fillStyle: 'transparent' }
+        });
+        body.sushiType = type; 
+        return body;
+    }
+
+    function getRandomSushiIndex() { return Math.floor(Math.random() * 3); }
+
+    function updateNextPreview() {
+        const canvas = document.getElementById('next-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const type = SUSHI_TYPES[nextSushiIndex];
+        drawSushiArt(ctx, 25, 25, 20, type);
+    }
+
     function spawnCurrent() {
         const typeIdx = nextSushiIndex;
-        // Генерируем следующий
         nextSushiIndex = getRandomSushiIndex();
         updateNextPreview();
-
-        currentBody = createSushiBody(WIDTH / 2, spawnY, typeIdx, true);
-        // Отключаем столкновения пока он висит
+        
+        currentBody = createSushiBody(LOGICAL_WIDTH / 2, spawnY, typeIdx, true);
         currentBody.collisionFilter.group = -1; 
         World.add(world, currentBody);
         canDrop = true;
     }
 
-    // --- УПРАВЛЕНИЕ ---
-    
-    // Движение мыши
-    render.canvas.addEventListener('mousemove', (e) => {
-        if (!canDrop || !currentBody) return;
-        const rect = render.canvas.getBoundingClientRect();
-        let x = e.clientX - rect.left;
-        
-        // Ограничиваем, чтобы не выходил за стены
+    let scaleFactor = 1;
+
+    function resizeGame() {
+        const wrapper = document.getElementById('game-wrapper');
+        const availableWidth = wrapper.clientWidth;
+        const availableHeight = wrapper.clientHeight;
+        const scaleX = availableWidth / LOGICAL_WIDTH;
+        const scaleY = availableHeight / LOGICAL_HEIGHT;
+        scaleFactor = Math.min(scaleX, scaleY);
+        if (scaleFactor > 1.2) scaleFactor = 1.2;
+        containerElement.style.transform = `scale(${scaleFactor})`;
+    }
+
+    window.addEventListener('resize', resizeGame);
+    resizeGame();
+
+    function handleInputMove(clientX) {
+        if (!gameActive || !canDrop || !currentBody) return; // Проверка gameActive
+        const rect = containerElement.getBoundingClientRect();
+        let x = (clientX - rect.left) / scaleFactor;
         const r = currentBody.circleRadius;
-        if (x < r + 10) x = r + 10;
-        if (x > WIDTH - r - 10) x = WIDTH - r - 10;
-
+        if (x < r + 5) x = r + 5;
+        if (x > LOGICAL_WIDTH - r - 5) x = LOGICAL_WIDTH - r - 5;
         Body.setPosition(currentBody, { x: x, y: spawnY });
-    });
+    }
 
-    // Клик (сброс)
-    render.canvas.addEventListener('click', () => {
-        if (!canDrop || !currentBody) return;
+    function handleInputEnd() {
+        if (!gameActive || !canDrop || !currentBody) return; // Проверка gameActive
         canDrop = false;
-
-        // Включаем физику
         Body.setStatic(currentBody, false);
-        currentBody.collisionFilter.group = 0; // Включаем коллизии
-
+        currentBody.collisionFilter.group = 0; 
         currentBody = null;
+        setTimeout(spawnCurrent, 800);
+    }
 
-        // Спавним новый через задержку
-        setTimeout(() => {
-            spawnCurrent();
-        }, 800);
-    });
+    document.addEventListener('mousemove', (e) => handleInputMove(e.clientX));
+    document.addEventListener('mouseup', handleInputEnd);
 
-    // --- СЛИЯНИЕ РОЛЛОВ ---
+    containerElement.addEventListener('touchstart', (e) => {
+        if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
+    }, {passive: false});
+
+    containerElement.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
+    }, {passive: false});
+
+    containerElement.addEventListener('touchend', handleInputEnd);
+
     Events.on(engine, 'collisionStart', (event) => {
         const pairs = event.pairs;
-
         for (let i = 0; i < pairs.length; i++) {
             const bodyA = pairs[i].bodyA;
             const bodyB = pairs[i].bodyB;
-
-            // Если метки совпадают (одинаковые роллы) и это роллы (есть sushiType)
             if (bodyA.label === bodyB.label && bodyA.sushiType && bodyB.sushiType) {
                 const index = parseInt(bodyA.label);
-                
-                // Если это не самый последний уровень
                 if (index < SUSHI_TYPES.length - 1) {
-                    // Удаляем оба тела
                     World.remove(world, [bodyA, bodyB]);
-
-                    // Вычисляем середину
                     const midX = (bodyA.position.x + bodyB.position.x) / 2;
                     const midY = (bodyA.position.y + bodyB.position.y) / 2;
-
-                    // Создаем новый ролл уровнем выше
                     const newBody = createSushiBody(midX, midY, index + 1);
                     World.add(world, newBody);
-
-                    // Обновляем очки
                     score += (index + 1) * 10;
                     document.getElementById('score').innerText = score;
                 }
@@ -305,7 +405,6 @@
         }
     });
 
-    // --- ЗАПУСК ---
     nextSushiIndex = getRandomSushiIndex();
     updateNextPreview();
     spawnCurrent();
