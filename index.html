@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sushi Merge: Perfect Fit</title>
+    <title>Sushi Merge: Realistic Colors</title>
     <style>
         /* --- СБРОС И БАЗА --- */
         * { box-sizing: border-box; }
@@ -13,18 +13,17 @@
             padding: 0;
             background-color: #fce8cc;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; /* Запрет скролла */
+            overflow: hidden;
             width: 100vw;
-            /* 100dvh учитывает адресную строку мобильных браузеров */
             height: 100dvh; 
             display: flex;
             flex-direction: column;
-            touch-action: none; /* Запрет зума жестами */
+            touch-action: none;
         }
 
-        /* --- ХЕДЕР (Очки и Предпросмотр) --- */
+        /* --- ХЕДЕР --- */
         #ui-header {
-            flex: 0 0 auto; /* Не сжиматься, не растягиваться */
+            flex: 0 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -32,7 +31,7 @@
             max-width: 500px;
             margin: 10px auto;
             z-index: 100;
-            height: 60px; /* Фиксируем высоту хедера */
+            height: 60px;
         }
 
         .score-box {
@@ -58,19 +57,18 @@
             font-weight: bold;
         }
 
-        /* --- ОБЛАСТЬ ИГРЫ (Обертка) --- */
+        /* --- ОБЛАСТЬ ИГРЫ --- */
         #game-wrapper {
-            flex: 1 1 auto; /* Занимает ВСЕ оставшееся место */
+            flex: 1 1 auto;
             position: relative;
             width: 100%;
             display: flex;
             justify-content: center;
-            align-items: center; /* Центрируем игру по вертикали и горизонтали */
+            align-items: center;
             overflow: hidden;
-            padding: 10px; /* Отступы от краев экрана */
+            padding: 10px;
         }
 
-        /* --- САМ СТАКАН (Масштабируемый элемент) --- */
         #game-container {
             position: relative;
             background: #ebd5b3;
@@ -78,11 +76,9 @@
             border-left: 5px solid #bcaaa4;
             border-right: 5px solid #bcaaa4;
             border-bottom: 5px solid #bcaaa4;
-            /* Трансформация будет происходить от центра */
             transform-origin: center center; 
         }
 
-        /* --- ЭЛЕМЕНТЫ ВНУТРИ ИГРЫ --- */
         #danger-line {
             position: absolute;
             top: 130px;
@@ -103,7 +99,7 @@
             pointer-events: none;
         }
 
-        /* --- ПОПАПЫ (МЕНЮ) --- */
+        /* --- ПОПАПЫ --- */
         .overlay {
             position: absolute;
             top: 0;
@@ -157,7 +153,6 @@
             font-family: monospace; font-size: 20px; margin: 10px 0; letter-spacing: 2px;
             border: 2px solid #fab1a0;
         }
-
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
@@ -219,7 +214,7 @@
     let gameActive = false;
     let gameOver = false;
     let score = 0;
-    let scaleFactor = 1; // Текущий масштаб
+    let scaleFactor = 1;
 
     // --- ФУНКЦИИ МЕНЮ ---
     function startGame() {
@@ -228,7 +223,7 @@
         setTimeout(() => {
             menu.style.display = 'none';
             gameActive = true;
-            resizeGame(); // Пересчитать размер перед стартом
+            resizeGame();
             spawnCurrent();
         }, 300);
     }
@@ -281,16 +276,18 @@
         }
     }
 
-    // --- MATTER.JS SETUP ---
+    // --- НОВЫЕ ТИПЫ РОЛЛОВ И ЦВЕТА ---
+    // radius: Размер
+    // color: Цвет начинки
     const SUSHI_TYPES = [
-        { radius: 23, type: 'maki', color: '#ff6b6b' }, 
-        { radius: 32, type: 'maki', color: '#9aca3c' }, 
-        { radius: 45, type: 'rice', color: '#ff9f43' }, 
-        { radius: 58, type: 'rice', color: '#f368e0' }, 
-        { radius: 72, type: 'rice', color: '#ee5253' }, 
-        { radius: 86, type: 'rice', color: '#2e86de' },        
-        { radius: 98, type: 'rice', color: '#10ac84' },        
-        { radius: 115, type: 'special', color: '#222f3e' }     
+        { radius: 23, color: '#4cd137', name: 'Огурец' },    // 0 - Зеленый
+        { radius: 32, color: '#e84118', name: 'Тунец' },     // 1 - Красный
+        { radius: 45, color: '#f39c12', name: 'Лосось' },    // 2 - Оранжевый
+        { radius: 58, color: '#f1c40f', name: 'Тамаго' },    // 3 - Желтый
+        { radius: 72, color: '#ff7979', name: 'Креветка' },  // 4 - Розовый
+        { radius: 86, color: '#cddc39', name: 'Авокадо' },   // 5 - Салатовый
+        { radius: 98, color: '#795548', name: 'Угорь' },     // 6 - Коричневый
+        { radius: 115, color: '#c0392b', name: 'Икра' }      // 7 - Темно-красный
     ];
 
     const Engine = Matter.Engine,
@@ -328,7 +325,7 @@
     }
     createWalls();
 
-    // --- ЛОГИКА ИГРЫ ---
+    // --- ЛОГИКА ---
     let currentBody = null;
     let nextSushiIndex = 0;
     let canDrop = true;
@@ -347,7 +344,7 @@
             render: { fillStyle: 'transparent' }
         });
         body.sushiType = type; 
-        if (!isStatic) body.isFalling = true; // Сразу падает, если создан не в руке
+        if (!isStatic) body.isFalling = true; 
         body.hasCollided = false;
         return body;
     }
@@ -373,7 +370,6 @@
         canDrop = true;
     }
 
-    // --- ПРОВЕРКА GAME OVER ---
     Events.on(engine, 'beforeUpdate', function() {
         if (!gameActive || gameOver) return;
         const bodies = Composite.allBodies(world);
@@ -395,7 +391,6 @@
         }
     });
 
-    // --- КОЛЛИЗИИ ---
     Events.on(engine, 'collisionStart', (event) => {
         const pairs = event.pairs;
         for (let i = 0; i < pairs.length; i++) {
@@ -426,19 +421,33 @@
         }
     });
 
-    // --- РЕНДЕР АРТА ---
+    // --- ОБНОВЛЕННАЯ ОТРИСОВКА (ТОЛЬКО МАКИ СТАЙЛ) ---
     function drawSushiArt(ctx, x, y, radius, typeData) {
-        if (typeData.type === 'maki') {
-            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fillStyle = '#2d3436'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.85, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2); ctx.fillStyle = typeData.color; ctx.fill();
-        } else {
-            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fillStyle = '#fdfdfd'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.65, 0, Math.PI * 2); ctx.fillStyle = '#2d3436'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2); ctx.fillStyle = typeData.color; ctx.fill();
-        }
-        ctx.beginPath(); ctx.arc(x - radius*0.3, y - radius*0.3, radius*0.15, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
+        // 1. Окантовка (Нори) - Черная
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#1a1a1a'; 
+        ctx.fill();
+
+        // 2. Рис - Белый круг
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 0.85, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff'; 
+        ctx.fill();
+
+        // 3. Начинка - Цветной круг
+        ctx.beginPath();
+        ctx.arc(x, y, radius * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = typeData.color; 
+        ctx.fill();
+
+        // 4. Блик (для объема)
+        ctx.beginPath();
+        ctx.arc(x - radius*0.3, y - radius*0.3, radius*0.2, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fill();
     }
+
     Events.on(render, 'afterRender', function() {
         const ctx = render.context;
         const bodies = Composite.allBodies(world);
@@ -447,42 +456,28 @@
         });
     });
 
-    // --- АДАПТИВНОСТЬ (ГЛАВНЫЙ ФИКС) ---
+    // --- АДАПТИВНОСТЬ ---
     function resizeGame() {
         const wrapper = document.getElementById('game-wrapper');
-        // Получаем реальные доступные размеры области враппера
         const availableW = wrapper.clientWidth;
         const availableH = wrapper.clientHeight;
-
-        // Рассчитываем масштаб так, чтобы игра всегда влезала
-        // Берем отступы 20px для красоты
         const scaleX = (availableW - 20) / LOGICAL_WIDTH;
         const scaleY = (availableH - 20) / LOGICAL_HEIGHT;
         
         scaleFactor = Math.min(scaleX, scaleY);
-        
-        // Ограничиваем максимальный масштаб на десктопах, чтобы не было гигантским
         if (scaleFactor > 1.3) scaleFactor = 1.3;
 
         containerElement.style.transform = `scale(${scaleFactor})`;
     }
 
-    // Слушаем ресайз и сразу вызываем
     window.addEventListener('resize', resizeGame);
-    // Вызываем через небольшой таймаут, чтобы браузер успел убрать адресную строку если надо
     setTimeout(resizeGame, 100);
 
     // --- УПРАВЛЕНИЕ ---
     function handleInputMove(clientX) {
         if (!gameActive || !canDrop || !currentBody) return;
-        
-        // Получаем координаты самого контейнера игры
         const rect = containerElement.getBoundingClientRect();
-        
-        // Главная магия координат:
-        // (Клик на экране - левый край игры) / Масштаб = Координата внутри игры
         let x = (clientX - rect.left) / scaleFactor;
-
         const r = currentBody.circleRadius;
         if (x < r + 5) x = r + 5;
         if (x > LOGICAL_WIDTH - r - 5) x = LOGICAL_WIDTH - r - 5;
@@ -492,28 +487,24 @@
     function handleInputEnd() {
         if (!gameActive || !canDrop || !currentBody) return;
         canDrop = false;
-        
-        currentBody.isFalling = true; // Явно ставим флаг падения
+        currentBody.isFalling = true; 
         Body.setStatic(currentBody, false);
         currentBody.collisionFilter.group = 0; 
         currentBody = null;
         setTimeout(spawnCurrent, 800);
     }
 
-    // Мышь
     document.addEventListener('mousemove', (e) => handleInputMove(e.clientX));
     document.addEventListener('mouseup', handleInputEnd);
 
-    // Тач (с preventDefault чтобы не скроллилось)
-    // Добавляем обработчики на весь body, чтобы ловить движения даже за пределами стакана
     document.body.addEventListener('touchstart', (e) => {
-        if(e.target.closest('button')) return; // Не блокировать кнопки
+        if(e.target.closest('button')) return;
         if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
     }, {passive: false});
 
     document.body.addEventListener('touchmove', (e) => {
         if(e.target.closest('button')) return;
-        e.preventDefault(); // Блокируем скролл страницы
+        e.preventDefault();
         if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
     }, {passive: false});
 
