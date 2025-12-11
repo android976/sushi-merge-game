@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sushi Merge Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #fce8cc; /* Цвет фона как на скрине */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        #ui-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 400px;
+            color: #5d4037;
+        }
+
+        .score-box {
+            background: #fff;
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 2px solid #5d4037;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        #game-container {
+            position: relative;
+            margin-top: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Линия проигрыша */
+        #danger-line {
+            position: absolute;
+            top: 100px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: transparent;
+            border-top: 2px dashed rgba(255, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #next-item-label {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+    </style>
+    <!-- Подключаем физический движок Matter.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+
+    <div id="ui-container">
+        <div class="score-box">Очки: <span id="score">0</span></div>
+        <div>
+            <div id="next-item-label">Следующий:</div>
+            <!-- Сюда будем рисовать следующий ролл -->
+            <canvas id="next-canvas" width="60" height="60" style="background:none;"></canvas>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="danger-line"></div>
+        <!-- Здесь будет канвас игры -->
+    </div>
+
+<script>
+    // --- НАСТРОЙКИ РОЛЛОВ ---
+    // Здесь определяем иерархию: от маленьких маки до больших сетов
+    const SUSHI_TYPES = [
+        { radius: 25, type: 'maki', color: '#ff6b6b', name: 'Маки с тунцом' },        // 0
+        { radius: 35, type: 'maki', color: '#9aca3c', name: 'Маки с огурцом' },       // 1
+        { radius: 48, type: 'rice', color: '#ff9f43', name: 'Сяке Ролл' },            // 2
+        { radius: 60, type: 'rice', color: '#f368e0', name: 'Калифорния' },           // 3
+        { radius: 75, type: 'rice', color: '#ee5253', name: 'Филадельфия' },          // 4
+        { radius: 90, type: 'rice', color: '#2e86de', name: 'Унаги Ролл' },           // 5
+        { radius: 105, type: 'rice', color: '#10ac84', name: 'Дракон' },              // 6
+        { radius: 120, type: 'special', color: '#222f3e', name: 'Сумо Сет' }          // 7
+    ];
+
+    // --- ИНИЦИАЛИЗАЦИЯ MATTER.JS ---
+    const Engine = Matter.Engine,
+          Render = Matter.Render,
+          Runner = Matter.Runner,
+          Bodies = Matter.Bodies,
+          Composite = Matter.Composite,
+          Events = Matter.Events,
+          World = Matter.World,
+          Body = Matter.Body;
+
+    // Параметры игрового поля
+    const WIDTH = 450;
+    const HEIGHT = 700;
+    const WALL_THICKNESS = 40;
+
+    const engine = Engine.create();
+    const world = engine.world;
+
+    // Создаем рендерер
+    const render = Render.create({
+        element: document.getElementById('game-container'),
+        engine: engine,
+        options: {
+            width: WIDTH,
+            height: HEIGHT,
+            wireframes: false, // Чтобы были цвета, а не каркас
+            background: '#ebd5b3' // Цвет "стакана" внутри
+        }
+    });
+
+    // --- СОЗДАНИЕ СТЕН ---
+    const ground = Bodies.rectangle(WIDTH/2, HEIGHT + WALL_THICKNESS/2 - 10, WIDTH, WALL_THICKNESS, { isStatic: true, render: { fillStyle: '#bcaaa4' } });
+    const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, HEIGHT/2, WALL_THICKNESS, HEIGHT, { isStatic: true, render: { fillStyle: '#bcaaa4' } });
+    const rightWall = Bodies.rectangle(WIDTH + WALL_THICKNESS/2, HEIGHT/2, WALL_THICKNESS, HEIGHT, { isStatic: true, render: { fillStyle: '#bcaaa4' } });
+
+    World.add(world, [ground, leftWall, rightWall]);
+
+    // --- ЛОГИКА ИГРЫ ---
+    let currentBody = null;
+    let nextSushiIndex = 0;
+    let canDrop = true;
+    let score = 0;
+    const spawnY = 50; // Высота, с которой падают роллы
+
+    // Функция создания физического тела ролла
+    function createSushiBody(x, y, index, isStatic = false) {
+        const type = SUSHI_TYPES[index];
+        const body = Bodies.circle(x, y, type.radius, {
+            label: index.toString(), // Используем индекс как метку для слияния
+            restitution: 0.3, // Упругость
+            isStatic: isStatic,
+            render: {
+                fillStyle: type.type === 'maki' ? '#2d3436' : '#ffffff' // Нори или Рис (базовый цвет)
+            }
+        });
+        
+        // Добавляем свои свойства для отрисовки
+        body.sushiType = type; 
+        return body;
+    }
+
+    // Рандомайзер (выдает только первые 3 типа роллов для спавна)
+    function getRandomSushiIndex() {
+        return Math.floor(Math.random() * 3); 
+    }
+
+    // Обновление предпросмотра "Следующий"
+    function updateNextPreview() {
+        const canvas = document.getElementById('next-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const type = SUSHI_TYPES[nextSushiIndex];
+        // Рисуем миниатюру
+        drawSushiArt(ctx, 30, 30, 20, type); // Уменьшенный масштаб
+    }
+
+    // Функция отрисовки "арта" ролла (вызывается на каждом кадре)
+    function drawSushiArt(ctx, x, y, radius, typeData) {
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        
+        if (typeData.type === 'maki') {
+            // Маки: Черный контур (нори), белый рис внутри, цветная середина
+            ctx.fillStyle = '#2d3436'; // Нори
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 0.8, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff'; // Рис
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = typeData.color; // Начинка
+            ctx.fill();
+        } else {
+            // Обычный ролл: Белый рис снаружи, тонкий нори, начинка
+            ctx.fillStyle = '#ffffff'; // Рис
+            ctx.fill();
+            
+            // Текстура риса (точки)
+            ctx.fillStyle = '#e0e0e0';
+            for(let i=0; i<3; i++) {
+                ctx.beginPath();
+                ctx.arc(x + (Math.random()-0.5)*radius, y + (Math.random()-0.5)*radius, 2, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 0.6, 0, Math.PI * 2);
+            ctx.fillStyle = '#2d3436'; // Нори внутри
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius * 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = typeData.color; // Начинка
+            ctx.fill();
+        }
+        ctx.closePath();
+    }
+
+    // Подключаемся к рендеру Matter.js для отрисовки нашего "арта" поверх шариков
+    Events.on(render, 'afterRender', function() {
+        const ctx = render.context;
+        const bodies = Composite.allBodies(world);
+
+        bodies.forEach(body => {
+            if (body.sushiType) {
+                drawSushiArt(ctx, body.position.x, body.position.y, body.circleRadius, body.sushiType);
+            }
+        });
+    });
+
+    // Создание текущего шарика в руке
+    function spawnCurrent() {
+        const typeIdx = nextSushiIndex;
+        // Генерируем следующий
+        nextSushiIndex = getRandomSushiIndex();
+        updateNextPreview();
+
+        currentBody = createSushiBody(WIDTH / 2, spawnY, typeIdx, true);
+        // Отключаем столкновения пока он висит
+        currentBody.collisionFilter.group = -1; 
+        World.add(world, currentBody);
+        canDrop = true;
+    }
+
+    // --- УПРАВЛЕНИЕ ---
+    
+    // Движение мыши
+    render.canvas.addEventListener('mousemove', (e) => {
+        if (!canDrop || !currentBody) return;
+        const rect = render.canvas.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        
+        // Ограничиваем, чтобы не выходил за стены
+        const r = currentBody.circleRadius;
+        if (x < r + 10) x = r + 10;
+        if (x > WIDTH - r - 10) x = WIDTH - r - 10;
+
+        Body.setPosition(currentBody, { x: x, y: spawnY });
+    });
+
+    // Клик (сброс)
+    render.canvas.addEventListener('click', () => {
+        if (!canDrop || !currentBody) return;
+        canDrop = false;
+
+        // Включаем физику
+        Body.setStatic(currentBody, false);
+        currentBody.collisionFilter.group = 0; // Включаем коллизии
+
+        currentBody = null;
+
+        // Спавним новый через задержку
+        setTimeout(() => {
+            spawnCurrent();
+        }, 800);
+    });
+
+    // --- СЛИЯНИЕ РОЛЛОВ ---
+    Events.on(engine, 'collisionStart', (event) => {
+        const pairs = event.pairs;
+
+        for (let i = 0; i < pairs.length; i++) {
+            const bodyA = pairs[i].bodyA;
+            const bodyB = pairs[i].bodyB;
+
+            // Если метки совпадают (одинаковые роллы) и это роллы (есть sushiType)
+            if (bodyA.label === bodyB.label && bodyA.sushiType && bodyB.sushiType) {
+                const index = parseInt(bodyA.label);
+                
+                // Если это не самый последний уровень
+                if (index < SUSHI_TYPES.length - 1) {
+                    // Удаляем оба тела
+                    World.remove(world, [bodyA, bodyB]);
+
+                    // Вычисляем середину
+                    const midX = (bodyA.position.x + bodyB.position.x) / 2;
+                    const midY = (bodyA.position.y + bodyB.position.y) / 2;
+
+                    // Создаем новый ролл уровнем выше
+                    const newBody = createSushiBody(midX, midY, index + 1);
+                    World.add(world, newBody);
+
+                    // Обновляем очки
+                    score += (index + 1) * 10;
+                    document.getElementById('score').innerText = score;
+                }
+            }
+        }
+    });
+
+    // --- ЗАПУСК ---
+    nextSushiIndex = getRandomSushiIndex();
+    updateNextPreview();
+    spawnCurrent();
+    
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+</script>
+</body>
+</html>
