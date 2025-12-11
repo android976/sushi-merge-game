@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sushi Merge: Russian UI</title>
+    <title>Sushi Merge: Centered UI</title>
     <style>
         /* --- СБРОС И БАЗА --- */
         * { box-sizing: border-box; }
@@ -53,7 +53,7 @@
             flex-direction: column;
             align-items: center;
             color: #5d4037;
-            font-size: 12px; /* Размер шрифта для слова "Следующий" */
+            font-size: 12px;
             font-weight: bold;
         }
 
@@ -129,11 +129,26 @@
         .menu-title { font-size: 24px; color: #5d4037; margin-bottom: 5px; font-weight: 900; text-transform: uppercase; }
         .menu-subtitle { font-size: 16px; color: #ee5253; margin-bottom: 15px; font-weight: 700; }
         
+        /* ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ СПИСКА */
         .rewards-list {
-            text-align: left; background: #fff5e6; padding: 10px; border-radius: 10px; margin-bottom: 15px;
-            list-style: none; border: 2px dashed #ffb8b8;
+            text-align: center; /* Центрируем текст внутри блока */
+            background: #fff5e6; 
+            padding: 10px; 
+            border-radius: 10px; 
+            margin-bottom: 15px;
+            list-style: none; 
+            border: 2px dashed #ffb8b8;
         }
-        .rewards-list li { margin-bottom: 8px; font-size: 13px; color: #5d4037; display: flex; align-items: center; }
+        
+        .rewards-list li { 
+            margin-bottom: 8px; 
+            font-size: 13px; 
+            color: #5d4037; 
+            display: flex; 
+            align-items: center;
+            justify-content: center; /* Центрируем элементы (плашка + текст) в строке */
+        }
+        
         .rewards-list li:last-child { margin-bottom: 0; }
         
         .badge {
@@ -190,7 +205,6 @@
     <div id="ui-header">
         <div class="score-box">Очки: <span id="score">0</span></div>
         <div class="next-box">
-            <!-- ПЕРЕВЕДЕНО НА РУССКИЙ -->
             <span>Следующий</span>
             <canvas id="next-canvas" width="50" height="50"></canvas>
         </div>
