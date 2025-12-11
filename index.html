@@ -2,531 +2,264 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sushi Merge: Perfect Fit</title>
+    <title>Sushi Shooter</title>
     <style>
-        /* --- СБРОС И БАЗА --- */
-        * { box-sizing: border-box; }
-        
         body {
+            background-color: #222;
             margin: 0;
-            padding: 0;
-            background-color: #fce8cc;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; /* Запрет скролла */
-            width: 100vw;
-            /* 100dvh учитывает адресную строку мобильных браузеров */
-            height: 100dvh; 
-            display: flex;
-            flex-direction: column;
-            touch-action: none; /* Запрет зума жестами */
-        }
-
-        /* --- ХЕДЕР (Очки и Предпросмотр) --- */
-        #ui-header {
-            flex: 0 0 auto; /* Не сжиматься, не растягиваться */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 90%;
-            max-width: 500px;
-            margin: 10px auto;
-            z-index: 100;
-            height: 60px; /* Фиксируем высоту хедера */
-        }
-
-        .score-box {
-            background: #fff;
-            padding: 8px 15px;
-            border-radius: 12px;
-            border: 2px solid #5d4037;
-            font-weight: bold;
-            font-size: 18px;
-            color: #5d4037;
-            min-width: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .next-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #5d4037;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        /* --- ОБЛАСТЬ ИГРЫ (Обертка) --- */
-        #game-wrapper {
-            flex: 1 1 auto; /* Занимает ВСЕ оставшееся место */
-            position: relative;
-            width: 100%;
             display: flex;
             justify-content: center;
-            align-items: center; /* Центрируем игру по вертикали и горизонтали */
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-family: Arial, sans-serif;
             overflow: hidden;
-            padding: 10px; /* Отступы от краев экрана */
         }
-
-        /* --- САМ СТАКАН (Масштабируемый элемент) --- */
-        #game-container {
-            position: relative;
-            background: #ebd5b3;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            border-left: 5px solid #bcaaa4;
-            border-right: 5px solid #bcaaa4;
-            border-bottom: 5px solid #bcaaa4;
-            /* Трансформация будет происходить от центра */
-            transform-origin: center center; 
+        canvas {
+            background-color: #333;
+            border: 4px solid #555;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            cursor: crosshair;
         }
-
-        /* --- ЭЛЕМЕНТЫ ВНУТРИ ИГРЫ --- */
-        #danger-line {
-            position: absolute;
-            top: 130px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            border-top: 2px dashed rgba(231, 76, 60, 0.6);
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        #danger-text {
-            position: absolute;
-            top: 110px;
-            right: 5px;
-            font-size: 10px;
-            color: rgba(231, 76, 60, 0.8);
-            pointer-events: none;
-        }
-
-        /* --- ПОПАПЫ (МЕНЮ) --- */
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(252, 232, 204, 0.95);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            transition: opacity 0.3s;
-        }
-
-        .menu-content {
-            background: white;
-            padding: 25px 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(93, 64, 55, 0.2);
-            width: 85%;
-            max-width: 360px;
-            border: 4px solid #5d4037;
-        }
-
-        .menu-title { font-size: 24px; color: #5d4037; margin-bottom: 5px; font-weight: 900; text-transform: uppercase; }
-        .menu-subtitle { font-size: 16px; color: #ee5253; margin-bottom: 15px; font-weight: 700; }
-        
-        .rewards-list {
-            text-align: left; background: #fff5e6; padding: 10px; border-radius: 10px; margin-bottom: 15px;
-            list-style: none; border: 2px dashed #ffb8b8;
-        }
-        .rewards-list li { margin-bottom: 8px; font-size: 13px; color: #5d4037; display: flex; align-items: center; }
-        .rewards-list li:last-child { margin-bottom: 0; }
-        
-        .badge {
-            background: #ff6b6b; color: white; padding: 3px 6px; border-radius: 4px;
-            font-size: 11px; font-weight: bold; margin-right: 8px; min-width: 70px; text-align: center;
-        }
-
-        .btn {
-            background-color: #ff6b6b; color: white; border: none; padding: 12px 30px;
-            font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold;
-            box-shadow: 0 4px 0 #c0392b; text-transform: uppercase;
-        }
-        .btn:active { transform: translateY(4px); box-shadow: none; }
-
-        .promo-box {
-            background: #2d3436; color: #fff; padding: 8px; border-radius: 6px;
-            font-family: monospace; font-size: 20px; margin: 10px 0; letter-spacing: 2px;
-            border: 2px solid #fab1a0;
-        }
-
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
 <body>
 
-    <!-- СТАРТОВОЕ МЕНЮ -->
-    <div id="start-menu" class="overlay">
-        <div class="menu-content">
-            <div class="menu-title">Sushi Merge</div>
-            <div class="menu-subtitle">Играй и получай<br>бесплатные роллы!</div>
-            <ul class="rewards-list">
-                <li><span class="badge">1000 очков</span> Маки с лососем</li>
-                <li><span class="badge">2000 очков</span> Темпура с крабом</li>
-                <li><span class="badge">3000 очков</span> Филадельфия лайт</li>
-            </ul>
-            <button class="btn" onclick="startGame()">НАЧАТЬ</button>
-        </div>
-    </div>
-
-    <!-- МЕНЮ GAME OVER -->
-    <div id="game-over-menu" class="overlay" style="display: none;">
-        <div class="menu-content">
-            <div class="menu-title">Игра окончена!</div>
-            <div class="menu-subtitle">Ваш счет: <span id="final-score">0</span></div>
-            <div id="result-text">Текст результата</div>
-            <div id="promo-container" style="display:none;">
-                <div class="promo-box" id="promo-code">CODE</div>
-                <div style="font-size: 10px; color: #888;">Покажите промокод официанту</div>
-            </div>
-            <button class="btn" style="margin-top:15px; background-color: #2e86de; box-shadow: 0 4px 0 #1e6cb3;" onclick="restartGame()">ИГРАТЬ ЕЩЕ</button>
-        </div>
-    </div>
-
-    <!-- ИНТЕРФЕЙС -->
-    <div id="ui-header">
-        <div class="score-box">Очки: <span id="score">0</span></div>
-        <div class="next-box">
-            <span>Next</span>
-            <canvas id="next-canvas" width="50" height="50"></canvas>
-        </div>
-    </div>
-
-    <!-- ОБЛАСТЬ ИГРЫ -->
-    <div id="game-wrapper">
-        <div id="game-container">
-            <div id="danger-line"></div>
-            <span id="danger-text">Линия переполнения</span>
-        </div>
-    </div>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
 
 <script>
-    // --- НАСТРОЙКИ ---
-    const LOGICAL_WIDTH = 340; 
-    const LOGICAL_HEIGHT = 650;
-    const WALL_THICKNESS = 60;
-    const DANGER_Y = 130; 
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // --- НАСТРОЙКИ СУШИ ---
     
-    // --- ПЕРЕМЕННЫЕ ---
-    let gameActive = false;
-    let gameOver = false;
-    let score = 0;
-    let scaleFactor = 1; // Текущий масштаб
-
-    // --- ФУНКЦИИ МЕНЮ ---
-    function startGame() {
-        const menu = document.getElementById('start-menu');
-        menu.style.opacity = '0';
-        setTimeout(() => {
-            menu.style.display = 'none';
-            gameActive = true;
-            resizeGame(); // Пересчитать размер перед стартом
-            spawnCurrent();
-        }, 300);
-    }
-
-    function restartGame() {
-        Composite.clear(world, false, true); 
-        createWalls();
-        score = 0;
-        document.getElementById('score').innerText = '0';
-        gameActive = true;
-        gameOver = false;
-        currentBody = null;
-        canDrop = true;
-        document.getElementById('game-over-menu').style.display = 'none';
-        nextSushiIndex = getRandomSushiIndex();
-        updateNextPreview();
-        spawnCurrent();
-    }
-
-    function showGameOver() {
-        if(gameOver) return;
-        gameActive = false;
-        gameOver = true;
-        
-        const menu = document.getElementById('game-over-menu');
-        const finalText = document.getElementById('result-text');
-        const promoContainer = document.getElementById('promo-container');
-        const promoCode = document.getElementById('promo-code');
-        const finalScoreEl = document.getElementById('final-score');
-        
-        finalScoreEl.innerText = score;
-        menu.style.display = 'flex';
-        menu.style.opacity = '1';
-
-        if (score >= 3000) {
-            finalText.innerText = "Поздравляю! Промокод на Филадельфия лайт (от 1000₽):";
-            promoCode.innerText = "ФИЛА";
-            promoContainer.style.display = 'block';
-        } else if (score >= 2000) {
-            finalText.innerText = "Поздравляю! Промокод на Темпура с крабом (от 1300₽):";
-            promoCode.innerText = "КРАБ";
-            promoContainer.style.display = 'block';
-        } else if (score >= 1000) {
-            finalText.innerText = "Поздравляю! Промокод на Маки с лососем (от 1500₽):";
-            promoCode.innerText = "МАКИ";
-            promoContainer.style.display = 'block';
-        } else {
-            finalText.innerText = "Немного не хватило! Набери 1000 очков для приза.";
-            promoContainer.style.display = 'none';
-        }
-    }
-
-    // --- MATTER.JS SETUP ---
-    const SUSHI_TYPES = [
-        { radius: 23, type: 'maki', color: '#ff6b6b' }, 
-        { radius: 32, type: 'maki', color: '#9aca3c' }, 
-        { radius: 45, type: 'rice', color: '#ff9f43' }, 
-        { radius: 58, type: 'rice', color: '#f368e0' }, 
-        { radius: 72, type: 'rice', color: '#ee5253' }, 
-        { radius: 86, type: 'rice', color: '#2e86de' },        
-        { radius: 98, type: 'rice', color: '#10ac84' },        
-        { radius: 115, type: 'special', color: '#222f3e' }     
+    // 1. Палитра начинок (без фиолетового, только реальные продукты)
+    const SUSHI_COLORS = [
+        '#4CAF50', // Огурец (Зеленый)
+        '#FF9800', // Креветка (Оранжевый)
+        '#FF7043', // Лосось (Коралловый)
+        '#C62828', // Тунец (Красный)
+        '#FDD835'  // Омлет (Желтый)
+        // '#FFF9C4' // Рис (можно раскомментировать, если нужен белый)
     ];
 
-    const Engine = Matter.Engine,
-          Render = Matter.Render,
-          Runner = Matter.Runner,
-          Bodies = Matter.Bodies,
-          Composite = Matter.Composite,
-          Events = Matter.Events,
-          World = Matter.World,
-          Body = Matter.Body;
-
-    const engine = Engine.create();
-    const world = engine.world;
-    const containerElement = document.getElementById('game-container');
+    // 2. Параметры шариков
+    const RADIUS = 20;            // Радиус шарика
+    const DIAMETER = RADIUS * 2;
+    const ROW_HEIGHT = RADIUS * Math.sqrt(3); // Для плотной упаковки (гексагональная сетка)
     
-    const render = Render.create({
-        element: containerElement,
-        engine: engine,
-        options: {
-            width: LOGICAL_WIDTH,
-            height: LOGICAL_HEIGHT,
-            wireframes: false,
-            background: 'transparent'
+    // Переменные игры
+    let grid = []; // Сетка шариков
+    const rows = 10;
+    const cols = 10; // В широком ряду
+    
+    // Текущий снаряд
+    let bullet = {
+        x: canvas.width / 2,
+        y: canvas.height - RADIUS - 10,
+        color: getRandomColor(),
+        dx: 0,
+        dy: 0,
+        moving: false,
+        speed: 10
+    };
+
+    // Состояние мыши
+    let mouseX = 0;
+    let mouseY = 0;
+
+    // --- ИНИЦИАЛИЗАЦИЯ СЕТКИ ---
+    function initGrid() {
+        for (let r = 0; r < 5; r++) { // Заполняем первые 5 рядов
+            let row = [];
+            // Сдвиг для четных/нечетных рядов
+            let currentCols = (r % 2 === 0) ? cols : cols - 1;
+            
+            for (let c = 0; c < currentCols; c++) {
+                row.push({
+                    x: 0, 
+                    y: 0, 
+                    color: getRandomColor(),
+                    active: true
+                });
+            }
+            grid.push(row);
         }
-    });
-
-    function createWalls() {
-        const wallOpts = { isStatic: true, render: { visible: false }, restitution: 0.5, friction: 0, label: 'wall' };
-        const ground = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + WALL_THICKNESS/2, LOGICAL_WIDTH + 200, WALL_THICKNESS, { 
-            isStatic: true, render: { visible: false }, restitution: 0.5, friction: 0, label: 'ground' 
-        });
-        const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOpts);
-        const rightWall = Bodies.rectangle(LOGICAL_WIDTH + WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOpts);
-        World.add(world, [ground, leftWall, rightWall]);
-    }
-    createWalls();
-
-    // --- ЛОГИКА ИГРЫ ---
-    let currentBody = null;
-    let nextSushiIndex = 0;
-    let canDrop = true;
-    const spawnY = 60; 
-
-    function createSushiBody(x, y, index, isStatic = false) {
-        const type = SUSHI_TYPES[index];
-        const body = Bodies.circle(x, y, type.radius, {
-            label: index.toString(),
-            isStatic: isStatic,
-            restitution: 0.35, 
-            friction: 0.02, 
-            frictionAir: 0.001,  
-            frictionStatic: 0.1, 
-            density: 0.002,
-            render: { fillStyle: 'transparent' }
-        });
-        body.sushiType = type; 
-        if (!isStatic) body.isFalling = true; // Сразу падает, если создан не в руке
-        body.hasCollided = false;
-        return body;
+        // Остальные ряды пустые
+        for (let r = 5; r < rows; r++) {
+            grid.push([]); 
+        }
     }
 
-    function getRandomSushiIndex() { return Math.floor(Math.random() * 3); }
+    // Вспомогательная: случайный цвет из списка
+    function getRandomColor() {
+        return SUSHI_COLORS[Math.floor(Math.random() * SUSHI_COLORS.length)];
+    }
 
-    function updateNextPreview() {
-        const canvas = document.getElementById('next-canvas');
-        const ctx = canvas.getContext('2d');
+    // --- ОТРИСОВКА ---
+    function drawBall(x, y, color) {
+        ctx.beginPath();
+        ctx.arc(x, y, RADIUS, 0, Math.PI * 2);
+        
+        // 1. Заливка цветом начинки
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        // 2. РИСУЕМ НОРИ (Черная обводка)
+        ctx.lineWidth = 3;         // Толщина нори
+        ctx.strokeStyle = '#000000'; // Цвет нори
+        ctx.stroke();
+        
+        // (Опционально) Блик для объема
+        ctx.beginPath();
+        ctx.arc(x - RADIUS/3, y - RADIUS/3, RADIUS/4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const type = SUSHI_TYPES[nextSushiIndex];
-        drawSushiArt(ctx, 25, 25, 20, type);
-    }
 
-    function spawnCurrent() {
-        if(gameOver) return;
-        const typeIdx = nextSushiIndex;
-        nextSushiIndex = getRandomSushiIndex();
-        updateNextPreview();
-        currentBody = createSushiBody(LOGICAL_WIDTH / 2, spawnY, typeIdx, true);
-        currentBody.collisionFilter.group = -1; 
-        World.add(world, currentBody);
-        canDrop = true;
-    }
-
-    // --- ПРОВЕРКА GAME OVER ---
-    Events.on(engine, 'beforeUpdate', function() {
-        if (!gameActive || gameOver) return;
-        const bodies = Composite.allBodies(world);
-        for (let i = 0; i < bodies.length; i++) {
-            const body = bodies[i];
-            if (body.isStatic || body === currentBody || body.isFalling) continue;
-            if (!body.hasCollided) continue; 
-            if (body.speed > 0.2) continue;
-
-            const radius = body.circleRadius;
-            const topEdge = body.position.y - radius;
-            const overlap = DANGER_Y - topEdge;
-            const limit = radius * 2 * 0.1; 
-
-            if (overlap > limit) {
-                showGameOver();
-                return;
-            }
-        }
-    });
-
-    // --- КОЛЛИЗИИ ---
-    Events.on(engine, 'collisionStart', (event) => {
-        const pairs = event.pairs;
-        for (let i = 0; i < pairs.length; i++) {
-            const bodyA = pairs[i].bodyA;
-            const bodyB = pairs[i].bodyB;
-
-            const checkLanding = (body, other) => {
-                if (!body.isStatic && (other.label === 'ground' || other.sushiType)) {
-                    body.hasCollided = true;
-                    if(body.isFalling) body.isFalling = false;
-                }
-            };
-            if (bodyA.sushiType) checkLanding(bodyA, bodyB);
-            if (bodyB.sushiType) checkLanding(bodyB, bodyA);
-
-            if (bodyA.label === bodyB.label && bodyA.sushiType && bodyB.sushiType) {
-                const index = parseInt(bodyA.label);
-                if (index < SUSHI_TYPES.length - 1) {
-                    World.remove(world, [bodyA, bodyB]);
-                    const midX = (bodyA.position.x + bodyB.position.x) / 2;
-                    const midY = (bodyA.position.y + bodyB.position.y) / 2;
-                    const newBody = createSushiBody(midX, midY, index + 1); 
-                    World.add(world, newBody);
-                    score += (index + 1) * 10;
-                    document.getElementById('score').innerText = score;
+        // Рисуем сетку
+        for (let r = 0; r < grid.length; r++) {
+            // Смещение для гексагональной сетки
+            let offsetX = (r % 2 === 0) ? RADIUS : RADIUS * 2;
+            
+            for (let c = 0; c < grid[r].length; c++) {
+                let ball = grid[r][c];
+                if (ball.active) {
+                    // Вычисляем координаты шарика в сетке
+                    ball.x = offsetX + c * DIAMETER;
+                    ball.y = RADIUS + r * ROW_HEIGHT;
+                    
+                    drawBall(ball.x, ball.y, ball.color);
                 }
             }
         }
-    });
 
-    // --- РЕНДЕР АРТА ---
-    function drawSushiArt(ctx, x, y, radius, typeData) {
-        if (typeData.type === 'maki') {
-            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fillStyle = '#2d3436'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.85, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2); ctx.fillStyle = typeData.color; ctx.fill();
-        } else {
-            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fillStyle = '#fdfdfd'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.65, 0, Math.PI * 2); ctx.fillStyle = '#2d3436'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, radius * 0.45, 0, Math.PI * 2); ctx.fillStyle = typeData.color; ctx.fill();
+        // Рисуем снаряд (пушку)
+        drawBall(bullet.x, bullet.y, bullet.color);
+
+        // Линия прицела
+        if (!bullet.moving) {
+            ctx.beginPath();
+            ctx.moveTo(bullet.x, bullet.y);
+            ctx.lineTo(mouseX, mouseY); // Простая линия до курсора
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         }
-        ctx.beginPath(); ctx.arc(x - radius*0.3, y - radius*0.3, radius*0.15, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
-    }
-    Events.on(render, 'afterRender', function() {
-        const ctx = render.context;
-        const bodies = Composite.allBodies(world);
-        bodies.forEach(body => {
-            if (body.sushiType) drawSushiArt(ctx, body.position.x, body.position.y, body.circleRadius, body.sushiType);
-        });
-    });
-
-    // --- АДАПТИВНОСТЬ (ГЛАВНЫЙ ФИКС) ---
-    function resizeGame() {
-        const wrapper = document.getElementById('game-wrapper');
-        // Получаем реальные доступные размеры области враппера
-        const availableW = wrapper.clientWidth;
-        const availableH = wrapper.clientHeight;
-
-        // Рассчитываем масштаб так, чтобы игра всегда влезала
-        // Берем отступы 20px для красоты
-        const scaleX = (availableW - 20) / LOGICAL_WIDTH;
-        const scaleY = (availableH - 20) / LOGICAL_HEIGHT;
-        
-        scaleFactor = Math.min(scaleX, scaleY);
-        
-        // Ограничиваем максимальный масштаб на десктопах, чтобы не было гигантским
-        if (scaleFactor > 1.3) scaleFactor = 1.3;
-
-        containerElement.style.transform = `scale(${scaleFactor})`;
     }
 
-    // Слушаем ресайз и сразу вызываем
-    window.addEventListener('resize', resizeGame);
-    // Вызываем через небольшой таймаут, чтобы браузер успел убрать адресную строку если надо
-    setTimeout(resizeGame, 100);
+    // --- ЛОГИКА ---
+    function update() {
+        if (bullet.moving) {
+            bullet.x += bullet.dx;
+            bullet.y += bullet.dy;
+
+            // Отскок от стен
+            if (bullet.x - RADIUS < 0 || bullet.x + RADIUS > canvas.width) {
+                bullet.dx *= -1;
+            }
+
+            // Столкновение с потолком
+            if (bullet.y - RADIUS < 0) {
+                snapToGrid();
+            }
+
+            // Столкновение с шариками
+            for (let r = 0; r < grid.length; r++) {
+                for (let c = 0; c < grid[r].length; c++) {
+                    let b = grid[r][c];
+                    if (b.active) {
+                        let dist = Math.hypot(bullet.x - b.x, bullet.y - b.y);
+                        if (dist < DIAMETER - 2) { // -2 для небольшой погрешности
+                            snapToGrid();
+                            return; // Прерываем цикл, так как снаряд остановился
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Прилипание шарика к сетке
+    function snapToGrid() {
+        bullet.moving = false;
+
+        // Определяем ближайшую ячейку
+        let approxRow = Math.round((bullet.y - RADIUS) / ROW_HEIGHT);
+        if (approxRow < 0) approxRow = 0;
+        if (approxRow >= rows) approxRow = rows - 1;
+
+        let offsetX = (approxRow % 2 === 0) ? RADIUS : RADIUS * 2;
+        let approxCol = Math.round((bullet.x - offsetX) / DIAMETER);
+        
+        // Коррекция границ
+        if (approxCol < 0) approxCol = 0;
+        let maxCols = (approxRow % 2 === 0) ? cols : cols - 1;
+        if (approxCol >= maxCols) approxCol = maxCols - 1;
+
+        // Если ряд еще не существует (защита)
+        if (!grid[approxRow]) grid[approxRow] = [];
+
+        // Вставляем шарик в сетку
+        // В реальной игре нужно сдвигать массив, если ячейка занята, но для простоты заменяем/добавляем
+        // (Упрощенная логика прилипания для демо)
+        let newBall = {
+            x: 0, 
+            y: 0, 
+            color: bullet.color,
+            active: true
+        };
+        
+        // Простое добавление в структуру данных (нужна более сложная логика для идеального Bubbleshooter, но визуально сработает)
+        if (grid[approxRow][approxCol] && grid[approxRow][approxCol].active) {
+            // Если место занято, пытаемся найти соседнее (очень упрощенно)
+            approxRow++; 
+             if (!grid[approxRow]) grid[approxRow] = [];
+        }
+        
+        // Расширяем массив, если нужно
+        while(grid[approxRow].length <= approxCol) {
+            grid[approxRow].push({active: false});
+        }
+        
+        grid[approxRow][approxCol] = newBall;
+
+        // ПЕРЕЗАРЯДКА
+        bullet.x = canvas.width / 2;
+        bullet.y = canvas.height - RADIUS - 10;
+        bullet.color = getRandomColor();
+        bullet.dx = 0;
+        bullet.dy = 0;
+    }
 
     // --- УПРАВЛЕНИЕ ---
-    function handleInputMove(clientX) {
-        if (!gameActive || !canDrop || !currentBody) return;
-        
-        // Получаем координаты самого контейнера игры
-        const rect = containerElement.getBoundingClientRect();
-        
-        // Главная магия координат:
-        // (Клик на экране - левый край игры) / Масштаб = Координата внутри игры
-        let x = (clientX - rect.left) / scaleFactor;
-
-        const r = currentBody.circleRadius;
-        if (x < r + 5) x = r + 5;
-        if (x > LOGICAL_WIDTH - r - 5) x = LOGICAL_WIDTH - r - 5;
-        Body.setPosition(currentBody, { x: x, y: spawnY });
-    }
-
-    function handleInputEnd() {
-        if (!gameActive || !canDrop || !currentBody) return;
-        canDrop = false;
-        
-        currentBody.isFalling = true; // Явно ставим флаг падения
-        Body.setStatic(currentBody, false);
-        currentBody.collisionFilter.group = 0; 
-        currentBody = null;
-        setTimeout(spawnCurrent, 800);
-    }
-
-    // Мышь
-    document.addEventListener('mousemove', (e) => handleInputMove(e.clientX));
-    document.addEventListener('mouseup', handleInputEnd);
-
-    // Тач (с preventDefault чтобы не скроллилось)
-    // Добавляем обработчики на весь body, чтобы ловить движения даже за пределами стакана
-    document.body.addEventListener('touchstart', (e) => {
-        if(e.target.closest('button')) return; // Не блокировать кнопки
-        if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
-    }, {passive: false});
-
-    document.body.addEventListener('touchmove', (e) => {
-        if(e.target.closest('button')) return;
-        e.preventDefault(); // Блокируем скролл страницы
-        if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
-    }, {passive: false});
-
-    document.body.addEventListener('touchend', (e) => {
-        if(e.target.closest('button')) return;
-        handleInputEnd();
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
     });
 
-    nextSushiIndex = getRandomSushiIndex();
-    updateNextPreview();
-    Render.run(render);
-    const runner = Runner.create();
-    Runner.run(runner, engine);
+    canvas.addEventListener('mousedown', (e) => {
+        if (!bullet.moving) {
+            let angle = Math.atan2(mouseY - bullet.y, mouseX - bullet.x);
+            bullet.dx = Math.cos(angle) * bullet.speed;
+            bullet.dy = Math.sin(angle) * bullet.speed;
+            bullet.moving = true;
+        }
+    });
+
+    // --- ЗАПУСК ---
+    initGrid();
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+    loop();
 
 </script>
 </body>
