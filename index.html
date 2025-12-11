@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sushi Merge: Points Update</title>
+    <title>Sushi Merge: Fix Game Over</title>
     <style>
         body {
             margin: 0;
@@ -87,12 +87,12 @@
             display: inline-block;
             background: #ff6b6b;
             color: white;
-            padding: 4px 8px; /* Чуть увеличил отступы */
+            padding: 4px 8px;
             border-radius: 6px;
             font-size: 12px;
             font-weight: bold;
             margin-right: 8px;
-            min-width: 80px; /* Увеличил ширину под текст */
+            min-width: 80px;
             text-align: center;
             white-space: nowrap;
         }
@@ -221,7 +221,6 @@
             <div class="menu-subtitle">Играй и получай<br>бесплатные роллы!</div>
             
             <ul class="rewards-list">
-                <!-- ДОБАВЛЕНО СЛОВО "ОЧКОВ" -->
                 <li><span class="badge">1000 очков</span> Маки с лососем</li>
                 <li><span class="badge">2000 очков</span> Темпура с крабом</li>
                 <li><span class="badge">3000 очков</span> Филадельфия лайт</li>
@@ -305,6 +304,7 @@
     }
 
     function showGameOver() {
+        if(gameOver) return; // Защита от двойного вызова
         gameActive = false;
         gameOver = true;
         const menu = document.getElementById('game-over-menu');
@@ -375,11 +375,21 @@
             isStatic: true, 
             render: { visible: false },
             restitution: 0.5,
-            friction: 0
+            friction: 0,
+            label: 'wall' // Добавили метку для стен
         };
-        const ground = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + WALL_THICKNESS/2, LOGICAL_WIDTH + 200, WALL_THICKNESS, wallOptions);
+        // Пол помечаем как ground
+        const ground = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + WALL_THICKNESS/2, LOGICAL_WIDTH + 200, WALL_THICKNESS, { 
+            isStatic: true, 
+            render: { visible: false },
+            restitution: 0.5,
+            friction: 0,
+            label: 'ground' 
+        });
+        
         const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOptions);
         const rightWall = Bodies.rectangle(LOGICAL_WIDTH + WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOptions);
+        
         World.add(world, [ground, leftWall, rightWall]);
     }
     createWalls();
@@ -393,7 +403,7 @@
     function createSushiBody(x, y, index, isStatic = false) {
         const type = SUSHI_TYPES[index];
         const body = Bodies.circle(x, y, type.radius, {
-            label: index.toString(),
+            label: index.toString(), // Индекс типа
             isStatic: isStatic,
             restitution: 0.35, 
             friction: 0.02, 
@@ -403,6 +413,11 @@
             render: { fillStyle: 'transparent' }
         });
         body.sushiType = type; 
+        // Если тело создается динамическим (слияние или падение), считаем его падающим
+        // пока оно не коснется чего-то (кроме стен)
+        if (!isStatic) {
+            body.isFalling = true;
+        }
         return body;
     }
 
@@ -429,7 +444,7 @@
         canDrop = true;
     }
 
-    // --- СТРОГАЯ ПРОВЕРКА ПРОИГРЫША ---
+    // --- ИСПРАВЛЕННАЯ ПРОВЕРКА ПРОИГРЫША ---
     Events.on(engine, 'beforeUpdate', function() {
         if (!gameActive || gameOver) return;
 
@@ -438,28 +453,60 @@
         for (let i = 0; i < bodies.length; i++) {
             const body = bodies[i];
             
-            // Игнорируем стены и шарик, который сейчас в руке
-            if (body.isStatic || body === currentBody) continue;
+            // Игнорируем: статику (стены), текущий шар в руке, и шары, которые еще ЛЕТЯТ
+            if (body.isStatic || body === currentBody || body.isFalling) continue;
 
-            // Проверяем только шарики, которые относительно "спокойны" (speed < 0.5)
-            // Это нужно, чтобы не засчитывать пролетающий мимо при сбросе шарик
-            if (body.speed < 0.5) { 
-                const radius = body.circleRadius;
-                const diameter = radius * 2;
-                
-                // Верхний край шарика
-                const topEdge = body.position.y - radius;
-                
-                // Насколько сильно шарик залез выше линии
-                // DANGER_Y = 130. Если topEdge = 100, то overlap = 30.
-                const overlap = DANGER_Y - topEdge;
+            const radius = body.circleRadius;
+            const diameter = radius * 2;
+            const topEdge = body.position.y - radius;
+            const overlap = DANGER_Y - topEdge;
+            const limit = diameter * 0.1; // 10% от диаметра
 
-                // Условие: если перекрытие больше чем 10% от диаметра
-                const limit = diameter * 0.1;
+            // Если шарик уже не летит (упал на другой) и вылез за линию
+            if (overlap > limit) {
+                showGameOver();
+                return;
+            }
+        }
+    });
 
-                if (overlap > limit) {
-                    showGameOver();
-                    return; // Прерываем цикл, игра окончена
+    // Обработка столкновений для снятия флага isFalling
+    Events.on(engine, 'collisionStart', (event) => {
+        const pairs = event.pairs;
+        
+        for (let i = 0; i < pairs.length; i++) {
+            const bodyA = pairs[i].bodyA;
+            const bodyB = pairs[i].bodyB;
+
+            // Функция проверки: если шарик ударился о пол или другой суши (не стену), он приземлился
+            const checkLanding = (body, other) => {
+                if (body.isFalling) {
+                    // Если ударились о 'ground' или о другой шарик (у которого есть sushiType)
+                    if (other.label === 'ground' || other.sushiType) {
+                        body.isFalling = false;
+                    }
+                }
+            };
+
+            if (bodyA.sushiType) checkLanding(bodyA, bodyB);
+            if (bodyB.sushiType) checkLanding(bodyB, bodyA);
+
+            // --- Логика слияния ---
+            if (bodyA.label === bodyB.label && bodyA.sushiType && bodyB.sushiType) {
+                const index = parseInt(bodyA.label);
+                // Проверяем, что объекты еще существуют (не удалены в этом же тике)
+                if (index < SUSHI_TYPES.length - 1) {
+                    World.remove(world, [bodyA, bodyB]);
+                    const midX = (bodyA.position.x + bodyB.position.x) / 2;
+                    const midY = (bodyA.position.y + bodyB.position.y) / 2;
+                    
+                    // Новый шарик тоже помечается isFalling=true, но он внутри кучи, 
+                    // так что сразу столкнется и станет false. Это ок.
+                    const newBody = createSushiBody(midX, midY, index + 1);
+                    World.add(world, newBody);
+                    
+                    score += (index + 1) * 10;
+                    document.getElementById('score').innerText = score;
                 }
             }
         }
@@ -539,8 +586,13 @@
     function handleInputEnd() {
         if (!gameActive || !canDrop || !currentBody) return;
         canDrop = false;
+        
+        // Снимаем статику, теперь это физическое тело
         Body.setStatic(currentBody, false);
         currentBody.collisionFilter.group = 0; 
+        
+        // Важно: шар только начал падать, он isFalling = true по умолчанию (из createSushiBody)
+        
         currentBody = null;
         setTimeout(spawnCurrent, 800);
     }
@@ -555,27 +607,6 @@
         if(e.touches.length > 0) handleInputMove(e.touches[0].clientX);
     }, {passive: false});
     containerElement.addEventListener('touchend', handleInputEnd);
-
-    // --- СЛИЯНИЕ ---
-    Events.on(engine, 'collisionStart', (event) => {
-        const pairs = event.pairs;
-        for (let i = 0; i < pairs.length; i++) {
-            const bodyA = pairs[i].bodyA;
-            const bodyB = pairs[i].bodyB;
-            if (bodyA.label === bodyB.label && bodyA.sushiType && bodyB.sushiType) {
-                const index = parseInt(bodyA.label);
-                if (index < SUSHI_TYPES.length - 1) {
-                    World.remove(world, [bodyA, bodyB]);
-                    const midX = (bodyA.position.x + bodyB.position.x) / 2;
-                    const midY = (bodyA.position.y + bodyB.position.y) / 2;
-                    const newBody = createSushiBody(midX, midY, index + 1);
-                    World.add(world, newBody);
-                    score += (index + 1) * 10;
-                    document.getElementById('score').innerText = score;
-                }
-            }
-        }
-    });
 
     nextSushiIndex = getRandomSushiIndex();
     updateNextPreview();
