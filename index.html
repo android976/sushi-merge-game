@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sushi Merge: Fix Game Over</title>
+    <title>Sushi Merge: Fixed Start</title>
     <style>
         body {
             margin: 0;
@@ -304,7 +304,7 @@
     }
 
     function showGameOver() {
-        if(gameOver) return; // Защита от двойного вызова
+        if(gameOver) return; 
         gameActive = false;
         gameOver = true;
         const menu = document.getElementById('game-over-menu');
@@ -376,9 +376,8 @@
             render: { visible: false },
             restitution: 0.5,
             friction: 0,
-            label: 'wall' // Добавили метку для стен
+            label: 'wall'
         };
-        // Пол помечаем как ground
         const ground = Bodies.rectangle(LOGICAL_WIDTH/2, LOGICAL_HEIGHT + WALL_THICKNESS/2, LOGICAL_WIDTH + 200, WALL_THICKNESS, { 
             isStatic: true, 
             render: { visible: false },
@@ -386,10 +385,8 @@
             friction: 0,
             label: 'ground' 
         });
-        
         const leftWall = Bodies.rectangle(0 - WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOptions);
         const rightWall = Bodies.rectangle(LOGICAL_WIDTH + WALL_THICKNESS/2, LOGICAL_HEIGHT/2, WALL_THICKNESS, LOGICAL_HEIGHT * 2, wallOptions);
-        
         World.add(world, [ground, leftWall, rightWall]);
     }
     createWalls();
@@ -403,7 +400,7 @@
     function createSushiBody(x, y, index, isStatic = false) {
         const type = SUSHI_TYPES[index];
         const body = Bodies.circle(x, y, type.radius, {
-            label: index.toString(), // Индекс типа
+            label: index.toString(),
             isStatic: isStatic,
             restitution: 0.35, 
             friction: 0.02, 
@@ -413,8 +410,8 @@
             render: { fillStyle: 'transparent' }
         });
         body.sushiType = type; 
-        // Если тело создается динамическим (слияние или падение), считаем его падающим
-        // пока оно не коснется чего-то (кроме стен)
+        
+        // ВАЖНО: Если создаем не статический шар (например, при слиянии), сразу помечаем как падающий
         if (!isStatic) {
             body.isFalling = true;
         }
@@ -438,13 +435,14 @@
         nextSushiIndex = getRandomSushiIndex();
         updateNextPreview();
         
+        // Создаем шарик в руке (static: true)
         currentBody = createSushiBody(LOGICAL_WIDTH / 2, spawnY, typeIdx, true);
         currentBody.collisionFilter.group = -1; 
         World.add(world, currentBody);
         canDrop = true;
     }
 
-    // --- ИСПРАВЛЕННАЯ ПРОВЕРКА ПРОИГРЫША ---
+    // --- ПРОВЕРКА ПРОИГРЫША ---
     Events.on(engine, 'beforeUpdate', function() {
         if (!gameActive || gameOver) return;
 
@@ -453,16 +451,23 @@
         for (let i = 0; i < bodies.length; i++) {
             const body = bodies[i];
             
-            // Игнорируем: статику (стены), текущий шар в руке, и шары, которые еще ЛЕТЯТ
-            if (body.isStatic || body === currentBody || body.isFalling) continue;
+            // 1. Игнорируем стены
+            if (body.isStatic) continue;
+            // 2. Игнорируем шарик, который сейчас в руке
+            if (body === currentBody) continue;
+            // 3. Игнорируем шарики, которые еще ЛЕТЯТ (не коснулись дна/других)
+            if (body.isFalling) continue;
+            // 4. Игнорируем шарики, которые быстро двигаются (качаются, падают)
+            if (body.speed > 0.2) continue;
 
+            // Расчет переполнения
             const radius = body.circleRadius;
             const diameter = radius * 2;
             const topEdge = body.position.y - radius;
             const overlap = DANGER_Y - topEdge;
-            const limit = diameter * 0.1; // 10% от диаметра
+            const limit = diameter * 0.1; 
 
-            // Если шарик уже не летит (упал на другой) и вылез за линию
+            // Если шарик УСПОКОИЛСЯ и выше линии
             if (overlap > limit) {
                 showGameOver();
                 return;
@@ -470,7 +475,7 @@
         }
     });
 
-    // Обработка столкновений для снятия флага isFalling
+    // --- ОБРАБОТКА СТОЛКНОВЕНИЙ ---
     Events.on(engine, 'collisionStart', (event) => {
         const pairs = event.pairs;
         
@@ -478,33 +483,26 @@
             const bodyA = pairs[i].bodyA;
             const bodyB = pairs[i].bodyB;
 
-            // Функция проверки: если шарик ударился о пол или другой суши (не стену), он приземлился
+            // Снимаем флаг падения, если коснулись пола или другого суши
             const checkLanding = (body, other) => {
                 if (body.isFalling) {
-                    // Если ударились о 'ground' или о другой шарик (у которого есть sushiType)
                     if (other.label === 'ground' || other.sushiType) {
                         body.isFalling = false;
                     }
                 }
             };
-
             if (bodyA.sushiType) checkLanding(bodyA, bodyB);
             if (bodyB.sushiType) checkLanding(bodyB, bodyA);
 
-            // --- Логика слияния ---
+            // Слияние
             if (bodyA.label === bodyB.label && bodyA.sushiType && bodyB.sushiType) {
                 const index = parseInt(bodyA.label);
-                // Проверяем, что объекты еще существуют (не удалены в этом же тике)
                 if (index < SUSHI_TYPES.length - 1) {
                     World.remove(world, [bodyA, bodyB]);
                     const midX = (bodyA.position.x + bodyB.position.x) / 2;
                     const midY = (bodyA.position.y + bodyB.position.y) / 2;
-                    
-                    // Новый шарик тоже помечается isFalling=true, но он внутри кучи, 
-                    // так что сразу столкнется и станет false. Это ок.
-                    const newBody = createSushiBody(midX, midY, index + 1);
+                    const newBody = createSushiBody(midX, midY, index + 1); // Создается падающим (isFalling=true)
                     World.add(world, newBody);
-                    
                     score += (index + 1) * 10;
                     document.getElementById('score').innerText = score;
                 }
@@ -532,7 +530,6 @@
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = '#fdfdfd'; 
             ctx.fill();
-            
             ctx.beginPath();
             ctx.arc(x, y, radius * 0.65, 0, Math.PI * 2);
             ctx.fillStyle = '#2d3436'; 
@@ -587,12 +584,12 @@
         if (!gameActive || !canDrop || !currentBody) return;
         canDrop = false;
         
-        // Снимаем статику, теперь это физическое тело
+        // === ИСПРАВЛЕНИЕ ===
+        // Явно помечаем шарик как падающий ПЕРЕД тем как отпустить
+        currentBody.isFalling = true;
+        
         Body.setStatic(currentBody, false);
         currentBody.collisionFilter.group = 0; 
-        
-        // Важно: шар только начал падать, он isFalling = true по умолчанию (из createSushiBody)
-        
         currentBody = null;
         setTimeout(spawnCurrent, 800);
     }
