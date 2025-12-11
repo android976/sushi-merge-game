@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sushi Merge: Medium Difficulty</title>
+    <title>Sushi Merge: Strict Mode</title>
     <style>
         body {
             margin: 0;
@@ -267,13 +267,11 @@
     let gameOver = false;
     let score = 0;
     
-    // --- НАСТРОЙКИ СЛОЖНОСТИ (MEDIUM) ---
-    // Уменьшили ширину стакана с 380 до 340 (сложнее попадать и меньше места)
+    // --- НАСТРОЙКИ ---
     const LOGICAL_WIDTH = 340; 
     const LOGICAL_HEIGHT = 650;
     const WALL_THICKNESS = 60;
     const DANGER_Y = 130; 
-    const GAME_OVER_FRAMES = 120;
 
     // --- ФУНКЦИИ ИНТЕРФЕЙСА ---
 
@@ -296,7 +294,6 @@
         document.getElementById('score').innerText = '0';
         gameActive = true;
         gameOver = false;
-        gameOverTimer = 0;
         currentBody = null;
         canDrop = true;
         document.getElementById('game-over-menu').style.display = 'none';
@@ -336,13 +333,12 @@
     }
 
     // --- MATTER.JS SETUP ---
-    // Увеличили размеры роллов для большей "тесноты"
     const SUSHI_TYPES = [
-        { radius: 23, type: 'maki', color: '#ff6b6b' }, // Было 22
-        { radius: 32, type: 'maki', color: '#9aca3c' }, // Было 30
-        { radius: 45, type: 'rice', color: '#ff9f43' }, // Было 42 (сильнее скачок)
-        { radius: 58, type: 'rice', color: '#f368e0' }, // Было 54
-        { radius: 72, type: 'rice', color: '#ee5253' }, // Было 68
+        { radius: 23, type: 'maki', color: '#ff6b6b' }, 
+        { radius: 32, type: 'maki', color: '#9aca3c' }, 
+        { radius: 45, type: 'rice', color: '#ff9f43' }, 
+        { radius: 58, type: 'rice', color: '#f368e0' }, 
+        { radius: 72, type: 'rice', color: '#ee5253' }, 
         { radius: 86, type: 'rice', color: '#2e86de' },        
         { radius: 98, type: 'rice', color: '#10ac84' },        
         { radius: 115, type: 'special', color: '#222f3e' }     
@@ -390,7 +386,6 @@
     let currentBody = null;
     let nextSushiIndex = 0;
     let canDrop = true;
-    let gameOverTimer = 0;
     const spawnY = 60; 
 
     function createSushiBody(x, y, index, isStatic = false) {
@@ -398,9 +393,8 @@
         const body = Bodies.circle(x, y, type.radius, {
             label: index.toString(),
             isStatic: isStatic,
-            // === БАЛАНС СЛОЖНОСТИ ===
-            restitution: 0.35,   // Оставили отскок как просили
-            friction: 0.02,      // Снизили трение (было 0.05). Роллы более "скользкие", сложнее строить башни.
+            restitution: 0.35, 
+            friction: 0.02, 
             frictionAir: 0.001,  
             frictionStatic: 0.1, 
             density: 0.002,
@@ -433,29 +427,39 @@
         canDrop = true;
     }
 
-    // --- ПРОВЕРКА ПРОИГРЫША ---
+    // --- СТРОГАЯ ПРОВЕРКА ПРОИГРЫША ---
     Events.on(engine, 'beforeUpdate', function() {
         if (!gameActive || gameOver) return;
 
         const bodies = Composite.allBodies(world);
-        let dangerDetected = false;
 
         for (let i = 0; i < bodies.length; i++) {
             const body = bodies[i];
+            
+            // Игнорируем стены и шарик, который сейчас в руке
             if (body.isStatic || body === currentBody) continue;
-            if (body.position.y < DANGER_Y) {
-                dangerDetected = true;
-                break;
-            }
-        }
 
-        if (dangerDetected) {
-            gameOverTimer++;
-            if (gameOverTimer > GAME_OVER_FRAMES) {
-                showGameOver();
+            // Проверяем только шарики, которые относительно "спокойны" (speed < 0.5)
+            // Это нужно, чтобы не засчитывать пролетающий мимо при сбросе шарик
+            if (body.speed < 0.5) { 
+                const radius = body.circleRadius;
+                const diameter = radius * 2;
+                
+                // Верхний край шарика
+                const topEdge = body.position.y - radius;
+                
+                // Насколько сильно шарик залез выше линии
+                // DANGER_Y = 130. Если topEdge = 100, то overlap = 30.
+                const overlap = DANGER_Y - topEdge;
+
+                // Условие: если перекрытие больше чем 10% от диаметра
+                const limit = diameter * 0.1;
+
+                if (overlap > limit) {
+                    showGameOver();
+                    return; // Прерываем цикл, игра окончена
+                }
             }
-        } else {
-            gameOverTimer = 0;
         }
     });
 
@@ -479,8 +483,6 @@
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fillStyle = '#fdfdfd'; 
             ctx.fill();
-            
-            // Чистые круги без узоров
             
             ctx.beginPath();
             ctx.arc(x, y, radius * 0.65, 0, Math.PI * 2);
